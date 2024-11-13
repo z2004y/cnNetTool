@@ -33,21 +33,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install -r requirements.txt
+          sudo pip install -r requirements.txt
       
       - name: Run hosts update script
         run: |
           sudo python setHosts.py
       
       - name: Commit and push changes
-        run: |
-          git config --global user.email "sinspired@gmail.com"
-          git config --global user.name "action_bot"
-          
-          if [[ -n $(git status -s) ]]; then
-            git add .
-            git commit -m "更新 hosts 内容"
-            git push
-          else
-            echo "No changes to commit"
-          fi
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "更新 hosts"
+          file_pattern: '.'
+          commit_user_name: action_bot
+          commit_user_email: sinspired@gmail.com
+          push_options: '--force'
