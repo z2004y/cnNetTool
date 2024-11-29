@@ -2,10 +2,10 @@ name: Update hosts
 
 on:
   push:
-    paths:
-      - 'setHosts.py'
-      - 'setHosts_Classic.py'
-      - 'requirements.txt'
+    # paths:
+    #   - 'setHosts.py'
+    #   - 'setHosts_Classic.py'
+    #   - 'requirements.txt'
   schedule:
     - cron: '0 */4 * * *'
   workflow_dispatch:  # 允许手动触发
@@ -20,14 +20,11 @@ jobs:
       cancel-in-progress: true
 
     steps:
-      - name: Wait for synchronization
-        run: sleep 10
-
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          fetch-depth: 1  # 减少克隆深度，加快检出速度
-      
+          fetch-depth: 1
+
       - name: Set up Python
         uses: actions/setup-python@v5  # 使用最新的 v5 版本
         with:
@@ -39,7 +36,7 @@ jobs:
           python -m pip install --upgrade pip
           sudo pip install -r requirements.txt
       
-      - name: Run hosts update script
+      - name: Run hosts update script1
         run: |
           sudo python setHosts.py
       
@@ -51,3 +48,4 @@ jobs:
           add: |
             hosts
             README.md
+          push: "--force"
