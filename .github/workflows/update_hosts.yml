@@ -6,6 +6,8 @@ on:
       - 'setHosts.py'
       - 'setHosts_Classic.py'
       - 'requirements.txt'
+    branches:
+      - 'main'
   schedule:
     - cron: '0 */4 * * *'
   workflow_dispatch:  # 允许手动触发
@@ -48,4 +50,4 @@ jobs:
           add: |
             hosts
             README.md
-          push: "--force"
+          push: true
