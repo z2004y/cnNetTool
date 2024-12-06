@@ -22,6 +22,7 @@ import httpx
 from rich import print as rprint
 from rich.progress import Progress, SpinnerColumn, TextColumn
 import wcwidth
+import logging.config
 
 # if sys.platform == "win32":
 #     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
@@ -329,6 +330,7 @@ class DomainResolver:
         ips.update(dns_ips)
 
         dns_resolve_end_time = datetime.now()
+
         dns_resolve_duration = dns_resolve_end_time - start_time
         logging.debug(f"DNS解析耗时: {dns_resolve_duration.total_seconds():.2f}秒")
 
@@ -484,7 +486,6 @@ class DomainResolver:
             return wrapper
         return decorator
 
-    import logging.config
     LOGGING_CONFIG = {
         "version": 1,
         "handlers": {
@@ -644,6 +645,7 @@ class LatencyTester:
                 # if "google" in group_name.lower():
                 # input("按任意键继续...")
                 return []
+
             # 排序结果
             valid_latency_ips = sorted(valid_latency_ips, key=lambda x: x[1])
 
@@ -657,6 +659,7 @@ class LatencyTester:
                 r for r in valid_latency_ips if not Utils.is_ipv6(r[0])]
             ipv6_results = [
                 r for r in valid_latency_ips if Utils.is_ipv6(r[0])]
+
             # 第二步：使用线程池并发验证SSL证书
             # loop = asyncio.get_running_loop()
             # ssl_verification_tasks = []
@@ -1108,10 +1111,10 @@ class LatencyTester:
         best_hosts = []
         selected_count = 0
 
-        if ipv4_results or ipv6_results:
-            rprint(f"[bright_black]- 验证SSL证书...[/bright_black]")
+        if ipv4_results:
+            min_ipv4_results = min(ipv4_results, key=lambda x: x[1])
 
-        # 检测 IPv4 证书有效性
+        # 先选择IPv4
         if ipv4_results:
             logging.debug(f"有效IPv4：\n{ipv4_results}\n")
             for ip, latency in ipv4_results:
@@ -1312,25 +1315,26 @@ class HostsUpdater:
     async def update_hosts(self):
         # 更新hosts文件的主逻辑
         all_entries = []
+
         for i, group in enumerate(self.domain_groups, 1):
             progress_str = Utils.get_align_str(i, group.name)
             rprint(progress_str)
-
-            all_ips = group.ips.copy()
-            if all_ips:
-                rprint(
-                    f"[bright_black]- 读取到 [bold bright_green]{
-                        len(all_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
-                )
-            else:
-                all_ips = set()
+            # 先获取预设IP
+            default_ips = group.ips.copy()
 
             # 2. 根据不同组设置IP
             if group.group_type == GroupType.SEPARATE:
                 for domain in group.domains:
                     rprint(f"\n为域名 {domain} 设置 DNS 映射主机")
-                    all_ips = set() # 重置初始ip，否则会混淆
-                    all_ips = set() # 重置初始ip，否则会混淆
+                    # 重置初始ip，否则会混淆
+                    all_ips = set()
+                    if default_ips:
+                        rprint(
+                            f"[bright_black]- 读取到 [bold bright_green]{
+                                len(default_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
+                        )
+                        all_ips.update(default_ips)
+
                     resolved_ips = await self.resolver.resolve_domain(domain)
                     all_ips.update(resolved_ips)
 
@@ -1353,10 +1357,21 @@ class HostsUpdater:
                                    latency in fastest_ips]
                     all_entries.extend(new_entries)
             else:
+                all_ips = set()
+                if default_ips:
+                    rprint(
+                        f"[bright_black]- 读取到 [bold bright_green]{
+                            len(default_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
+                    )
+                    all_ips.update(default_ips)
+
                 # 收集组内所有域名的DNS解析结果
                 domain_resolve_tasks = [self.resolver.resolve_domain(
                     domain) for domain in group.domains]
                 resolved_ips = await asyncio.gather(*domain_resolve_tasks, return_exceptions=True)
+
+                all_ips.update(
+                    ip for ip_list in resolved_ips for ip in ip_list if ip)
 
                 all_ips.update(
                     ip for ip_list in resolved_ips for ip in ip_list if ip)
@@ -1908,11 +1923,54 @@ class Config:
                 "provider": "Google",
                 "type": "ipv6",
             },
-            {"ip": "210.184.24.65", "provider": "CPC HK", "type": "ipv4"},
-            {"ip": "118.201.189.90", "provider": "SingNet", "type": "ipv4"},  # 新加坡
-            {"ip": "1.228.180.5", "provider": "SK Broadband ", "type": "ipv4"},  # 韩国
-            {"ip": "183.99.33.6", "provider": "Korea Telecom ", "type": "ipv4"},  # 韩国
-            {"ip": "203.248.252.2", "provider": "LG DACOM ", "type": "ipv4"},  # 韩国
+            {
+                "ip": "210.184.24.65",
+                "provider": "CPC HK",  # 香港
+                "type": "ipv4"
+            },
+            {
+                "ip": "18.163.103.200",
+                "provider": "Amazon HK",  # 香港
+                "type": "ipv4"
+            },
+            {
+                "ip": "43.251.159.130",
+                "provider": "IPTELECOM HK",  # 香港
+                "type": "ipv4"
+            },
+            {
+                "ip": "14.198.168.140",
+                "provider": "Broadband HK",  # 香港
+                "type": "ipv4"
+            },
+            {
+                "ip": "66.203.146.122",
+                "provider": "Dimension HK",  # 香港
+                "type": "ipv4"
+            },
+            {
+                "ip": "118.201.189.90",
+                "provider": "SingNet",  # 新加坡
+                            "type": "ipv4"
+            },
+            {
+                "ip": "1.228.180.5",
+                "provider": "SK Broadband ",  # 韩国
+                            "type": "ipv4"
+            },
+            {
+                "ip": "183.99.33.6",
+                "provider": "Korea Telecom ",  # 韩国
+                            "type": "ipv4"
+            },
+            {
+                "ip": "203.248.252.2",
+                "provider": "LG DACOM ",  # 韩国
+                            "type": "ipv4"
+            },
+
+
+
             # 第 2 梯队：延迟适中
             # {
             #     "ip": "129.250.35.250",
