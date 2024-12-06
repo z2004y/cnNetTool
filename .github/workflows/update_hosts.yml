@@ -30,8 +30,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5  # 使用最新的 v5 版本
         with:
-          python-version: '3.11'
-          cache: 'pip'  # 启用 pip 缓存
+          python-version: '3.12'
+          cache: 'pip'
       
       - name: Install dependencies
         run: |
@@ -46,7 +46,7 @@ jobs:
       - name: Commit and push changes
         uses: EndBug/add-and-commit@v9
         with:
-          message: "Update servers list"
+          message: "Update hosts list"
           add: |
             hosts
             README.md
