@@ -1,30 +1,26 @@
+import argparse
+import asyncio
+import ctypes
+import json
+import logging
 import os
+import platform
+import re
+import shutil
+import socket
 import ssl
 import sys
-from pathlib import Path
-import dns.resolver
-import json
-import shutil
-import asyncio
-import platform
-import logging
-import argparse
-import aiohttp
-import socket
-from enum import Enum
 from datetime import datetime, timedelta, timezone
-from typing import List, Set, Optional, Dict, Tuple
-import ctypes
-import re
+from enum import Enum
 from functools import wraps
-from rich import print as rprint
-from rich.progress import (
-    Progress,
-    BarColumn,
-    TaskID,
-    TimeRemainingColumn,
-)
 from math import floor
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
+
+import aiohttp
+import dns.resolver
+from rich import print as rprint
+from rich.progress import BarColumn, Progress, TaskID, TimeRemainingColumn
 
 # -------------------- 常量设置 -------------------- #
 RESOLVER_TIMEOUT = 1  # DNS 解析超时时间 秒
@@ -82,13 +78,12 @@ def parse_args():
         help="打印运行信息",
     )
     parser.add_argument(
-    "-n",
-    "--NotUseDnsServers",
-    action="store_true",
-    help="不使用DNS服务器解析（避免GitHub等被dns污染的网站获取错误地址)",
+        "-n",
+        "--NotUseDnsServers",
+        action="store_true",
+        help="不使用DNS服务器解析（避免GitHub等被dns污染的网站获取错误地址)",
     )
 
-    
     return parser.parse_args()
 
 
@@ -157,7 +152,7 @@ class Utils:
                 output_fb.write(readme_content)
 
             rprint(
-                f"[blue]已更新 README.md 文件,位于: [underline]README.md[/underline][/blue]\n"
+                "[blue]已更新 README.md 文件,位于: [underline]README.md[/underline][/blue]\n"
             )
 
         except FileNotFoundError as e:
@@ -704,7 +699,7 @@ class HostsManager:
             .replace("+0800", "+08:00")
         )
 
-        rprint(f"\n[bold yellow]正在更新 hosts 文件...[/bold yellow]")
+        rprint("\n[bold yellow]正在更新 hosts 文件...[/bold yellow]")
 
         save_hosts_content = []  # 提取新内容文本
 
@@ -971,7 +966,6 @@ class HostsUpdater:
 
     async def update_hosts(self):
         """主更新函数，支持并发进度显示"""
-        cache_valid = self.resolver._is_dns_cache_valid()
 
         with self.progress:
             # 并发处理所有组

@@ -1,31 +1,31 @@
-from math import floor
+import argparse
+import asyncio
+import concurrent
+import ctypes
+import json
+import logging
+import logging.config
 import os
+import platform
+import re
+import shutil
+import socket
 import ssl
 import sys
-from pathlib import Path
-import concurrent
-import dns.resolver
-import json
-import shutil
-import asyncio
-import platform
-import logging
-import argparse
-import socket
-from enum import Enum
 from datetime import datetime, timedelta, timezone
-from typing import List, Set, Optional, Dict, Tuple
-import ctypes
-import re
+from enum import Enum
 from functools import wraps
-import httpx
-from rich import print as rprint
-from rich.progress import Progress, SpinnerColumn, TextColumn
-import wcwidth
-import logging.config
+from math import floor
+from pathlib import Path
+from typing import Dict, List, Optional, Set, Tuple
 
-# if sys.platform == "win32":
-#     asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+import dns.resolver
+import httpx
+import wcwidth
+from rich import print as rprint
+
+# from rich.progress import Progress, SpinnerColumn, TextColumn
+
 # -------------------- 常量设置 -------------------- #
 RESOLVER_TIMEOUT = 0.1  # DNS 解析超时时间 秒
 HOSTS_NUM = 1  # 每个域名限定Hosts主机 ipv4 数量
@@ -50,7 +50,7 @@ def parse_args():
             "项目: https://github.com/sinspired/cnNetTool\n"
             "作者: Sinspired\n"
             "邮箱: ggmomo@gmail.com\n"
-            "发布: 2024-11-11\n"
+            "发布: 2024-12-06\n"
         ),
         formatter_class=argparse.RawTextHelpFormatter,  # 允许换行格式
     )
@@ -81,6 +81,20 @@ def parse_args():
         action="store_true",
         help="打印运行信息",
     )
+    parser.add_argument(
+        "-size",
+        "--batch-size",
+        default=5,
+        type=int,
+        help="SSL证书验证批次",
+    )
+    parser.add_argument(
+        "-policy",
+        "--dns-resolve-policy",
+        default="all",
+        type=str,
+        help="DNS解析器区域选择,[all、global、china]",
+    )
     return parser.parse_args()
 
 
@@ -110,8 +124,7 @@ class Utils:
             backup_path = f"{hosts_file_path}.bak"
             shutil.copy(hosts_file_path, backup_path)
             rprint(
-                f"\n[blue]已备份 [underline]{
-                    hosts_file_path}[/underline] 到 [underline]{backup_path}[/underline][/blue]"
+                f"\n[blue]已备份 [underline]{hosts_file_path}[/underline] 到 [underline]{backup_path}[/underline][/blue]"
             )
 
     @staticmethod
@@ -143,15 +156,14 @@ class Utils:
 
             # 使用替换方法而不是format
             readme_content = template_content.replace("{hosts_str}", hosts_str)
-            readme_content = readme_content.replace(
-                "{update_time}", update_time)
+            readme_content = readme_content.replace("{update_time}", update_time)
 
             # 写入新文件
             with open("README.md", "w", encoding="utf-8") as output_fb:
                 output_fb.write(readme_content)
 
             rprint(
-                f"[blue]已更新 README.md 文件,位于: [underline]README.md[/underline][/blue]\n"
+                "[blue]已更新 README.md 文件,位于: [underline]README.md[/underline][/blue]\n"
             )
 
         except FileNotFoundError as e:
@@ -202,12 +214,10 @@ class Utils:
             main_text = plain_text.strip()
             completion_mark = "[完成]"
             # 关键修改：直接从目标宽度减去主文本长度，不再额外预留[完成]的空间
-            fill_count = target_width - \
-                len(main_text) - len(completion_mark) - 6
+            fill_count = target_width - len(main_text) - len(completion_mark) - 6
             fill_count = max(0, fill_count)
 
-            filled_text = f"{main_text}{
-                fill_char * fill_count}{completion_mark}"
+            filled_text = f"{main_text}{fill_char * fill_count}{completion_mark}"
             return f"[blue on green]{filled_text}[/blue on green]"
         else:
             # 普通文本的处理保持不变
@@ -236,7 +246,7 @@ class Utils:
         ref_width = wcwidth.wcswidth(reference_str)
 
         # 构建基础字符串（不包含尾部填充）
-        base_str = f"正在处理第 {i} 组域名： {group_name}"
+        base_str = f"正在处理第 {i} 组域名： {group_name.upper()}"
 
         # 计算基础字符串的显示宽度
         base_width = wcwidth.wcswidth(base_str)
@@ -249,8 +259,7 @@ class Utils:
         padding_needed = max(0, padding_needed)
 
         # 构建最终的格式化字符串
-        formatted_str = f"\n[bold white on bright_black]正在处理第 [green]{
-            i}[/green] 组域名： {group_name}{' ' * padding_needed}[/bold white on bright_black]"
+        formatted_str = f"\n[bold white on bright_black]正在处理第 [green]{i}[/green] 组域名： {group_name.upper()}{' ' * padding_needed}[/bold white on bright_black]"
 
         return formatted_str
 
@@ -343,8 +352,7 @@ class DomainResolver:
 
             ips.update(ipv4_ips + ipv6_ips)
             logging.debug(
-                f"成功通过缓存文件解析 {domain}, 发现 {len(
-                    ipv4_ips)+len(ipv6_ips)} 个 DNS 主机:\n{ipv4_ips}\n{ipv6_ips if ipv6_ips else ''}\n"
+                f"成功通过缓存文件解析 {domain}, 发现 {len(ipv4_ips) + len(ipv6_ips)} 个 DNS 主机:\n{ipv4_ips}\n{ipv6_ips if ipv6_ips else ''}\n"
             )
         else:
             ipaddress_ips = await self._resolve_via_ipaddress(domain)
@@ -353,8 +361,7 @@ class DomainResolver:
 
         if ips:
             logging.debug(
-                f"成功通过 DNS服务器 和 DNS记录 解析 {domain}, 发现 {
-                    len(ips)} 个 唯一 DNS 主机\n{ips}\n"
+                f"成功通过 DNS服务器 和 DNS记录 解析 {domain}, 发现 {len(ips)} 个 唯一 DNS 主机\n{ips}\n"
             )
         else:
             logging.debug(f"警告: 无法解析 {domain}")
@@ -364,9 +371,9 @@ class DomainResolver:
         total_resolve_duration = ipaddress_resolve_end_time - start_time
 
         logging.debug(
-            f"IP地址解析耗时: {ipaddress_resolve_duration.total_seconds():.2f}秒")
-        logging.debug(
-            f"DNS解析总耗时: {total_resolve_duration.total_seconds():.2f}秒")
+            f"IP地址解析耗时: {ipaddress_resolve_duration.total_seconds():.2f}秒"
+        )
+        logging.debug(f"DNS解析总耗时: {total_resolve_duration.total_seconds():.2f}秒")
 
         return ips
 
@@ -407,8 +414,7 @@ class DomainResolver:
 
                 if ips:
                     logging.debug(
-                        f"成功使用 {dns_provider} : {dns_server} 解析 {
-                            domain}，共 {len(ips)} 个主机: {ips}"
+                        f"成功使用 {dns_provider} : {dns_server} 解析 {domain}，共 {len(ips)} 个主机: {ips}"
                     )
 
                 return ips
@@ -420,8 +426,7 @@ class DomainResolver:
         # 根据 dns_type 选择要使用的 DNS 服务器
         if dns_type.lower() == "all":
             dns_servers = (
-                self.dns_servers["china_mainland"] +
-                self.dns_servers["international"]
+                self.dns_servers["china_mainland"] + self.dns_servers["international"]
             )
         elif dns_type.lower() == "china":
             dns_servers = self.dns_servers["china_mainland"]
@@ -429,28 +434,24 @@ class DomainResolver:
             dns_servers = self.dns_servers["international"]
         else:
             dns_servers = (
-                self.dns_servers["china_mainland"] +
-                self.dns_servers["international"]
+                self.dns_servers["china_mainland"] + self.dns_servers["international"]
             )
             # raise ValueError(f"无效的 DNS 类型：{dns_type}")
-        with concurrent.futures.ThreadPoolExecutor(max_workers=10):
-            # 并发解析所有选定的 DNS 服务器，并保留非空结果
-            tasks = [resolve_with_dns_server(dns_server)
-                     for dns_server in dns_servers]
-            results = await asyncio.gather(*tasks)
 
-            # 合并所有非空的解析结果
-            ips = set(ip for result in results for ip in result if ip)
+        # 并发解析所有选定的 DNS 服务器，并保留非空结果
+        tasks = [resolve_with_dns_server(dns_server) for dns_server in dns_servers]
+        results = await asyncio.gather(*tasks)
 
+        # 合并所有非空的解析结果
+        ips = set(ip for result in results for ip in result if ip)
         if ips:
             logging.debug(
-                f"成功使用多个 DNS 服务器解析 {domain}，共 {
-                    len(ips)} 个主机:\n{ips}\n"
+                f"成功使用多个 DNS 服务器解析 {domain}，共 {len(ips)} 个主机:\n{ips}\n"
             )
-
+        # input("按任意键继续")
         return ips
 
-    def retry_async(tries=3, delay=0.1):
+    def retry_async(tries=3, delay=0):
         def decorator(func):
             @wraps(func)
             async def wrapper(*args, **kwargs):
@@ -458,7 +459,7 @@ class DomainResolver:
                 for attempt in range(tries):
                     try:
                         return await func(*args, **kwargs)
-                    except Exception as e:
+                    except Exception:
                         if attempt < tries - 1:
                             print(f"第 {attempt + 2} 次尝试:")
                             # logging.debug(f"通过DNS_records解析 {args[1]},第 {attempt + 2} 次尝试:")
@@ -474,16 +475,17 @@ class DomainResolver:
                             }
                             self.save_hosts_cache()
                             logging.warning(
-                                f"ipaddress.com {tries} 次尝试后未解析到 {
-                                    domain} 的 DNS_records 地址，"
+                                f"ipaddress.com {tries} 次尝试后未解析到 {domain} 的 DNS_records 地址，"
                                 f"已写入空地址到缓存以免无谓消耗网络资源"
                             )
-                            print(f"通过 DNS_records 解析 {
-                                  domain}，{tries} 次尝试后终止！")
+                            # print(f"通过 DNS_records 解析 {
+                            #       domain}，{tries} 次尝试后终止！")
                             return None
                         await asyncio.sleep(delay)
                 return None
+
             return wrapper
+
         return decorator
 
     LOGGING_CONFIG = {
@@ -492,7 +494,7 @@ class DomainResolver:
             "httpxHandlers": {
                 "class": "logging.StreamHandler",
                 "formatter": "http",
-                "stream": "ext://sys.stderr"
+                "stream": "ext://sys.stderr",
             }
         },
         "formatters": {
@@ -501,16 +503,16 @@ class DomainResolver:
                 "datefmt": "%Y-%m-%d %H:%M:%S",
             }
         },
-        'loggers': {
-            'httpx': {
-                'handlers': ['httpxHandlers'],
-                'level': 'WARNING',
+        "loggers": {
+            "httpx": {
+                "handlers": ["httpxHandlers"],
+                "level": "WARNING",
             },
-            'httpcore': {
-                'handlers': ['httpxHandlers'],
-                'level': 'WARNING',
+            "httpcore": {
+                "handlers": ["httpxHandlers"],
+                "level": "WARNING",
             },
-        }
+        },
     }
 
     logging.config.dictConfig(LOGGING_CONFIG)
@@ -519,14 +521,17 @@ class DomainResolver:
     async def _resolve_via_ipaddress(self, domain: str) -> Set[str]:
         ips = set()
         url = f"https://www.ipaddress.com/website/{domain}"
+        # headers = {
+        #    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+        #    "AppleWebKit/537.36 (KHTML, like Gecko) "
+        #    "Chrome/106.0.0.0 Safari/537.36"
+        # }
         headers = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-            "AppleWebKit/537.36 (KHTML, like Gecko) "
-            "Chrome/106.0.0.0 Safari/537.36"
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36",
+            "Referer": "https://www.ipaddress.com",
         }
 
         try:
-            # 使用httpx替代aiohttp
             async with httpx.AsyncClient(
                 timeout=httpx.Timeout(1.0),
                 follow_redirects=True,
@@ -536,14 +541,13 @@ class DomainResolver:
 
                 # # 使用内置方法检查状态码
                 response.raise_for_status()  # 自动处理非200状态码
-                # if response.status_code != 200:
-                #     logging.warning(f"DNS解析请求失败: {response.status_code} for {domain}")
-                #     return ips
 
                 content = response.text
-                # 使用更精确的正则表达式
-                ipv4_pattern = r"\b(?:[0-9]{1,3}\.){3}[0-9]{1,3}\b"
-                ipv6_pattern = r"(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}"
+
+                ipv4_pattern = r">((?:[0-9]{1,3}\.){3}[0-9]{1,3})\b<"
+                # ipv6_pattern = r">((?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4})<"
+                # 支持ipv6压缩
+                ipv6_pattern = r">((?:[0-9a-fA-F]{1,4}:){2,7}[0-9a-fA-F]{1,4}|[0-9a-fA-F]{1,4}(?::[0-9a-fA-F]{1,4}){0,5}::[0-9a-fA-F]{1,6})<"
 
                 ipv4_ips = set(re.findall(ipv4_pattern, content))
                 ipv6_ips = set(re.findall(ipv6_pattern, content))
@@ -560,8 +564,9 @@ class DomainResolver:
                         "source": "DNS_records",
                     }
                     self.save_hosts_cache()
-                    logging.debug(f"通过 ipaddress.com 成功解析 {
-                                  domain} 并更新 DNS_records 缓存")
+                    logging.debug(
+                        f"通过 ipaddress.com 成功解析 {domain} 并更新 DNS_records 缓存"
+                    )
                     logging.debug(f"DNS_records：\n {ips}")
                 else:
                     self.dns_records[domain] = {
@@ -571,12 +576,14 @@ class DomainResolver:
                         "source": "DNS_records",
                     }
                     self.save_hosts_cache()
-                    logging.warning(f"ipaddress.com 未解析到 {
-                        domain} 的 DNS_records 地址,已写入空地址到缓存以免无谓消耗网络资源")
+                    logging.warning(
+                        f"ipaddress.com 未解析到 {domain} 的 DNS_records 地址,已写入空地址到缓存以免无谓消耗网络资源"
+                    )
         except Exception as e:
             logging.error(f"通过DNS_records解析 {domain} 失败! {e}")
             raise
         return ips
+
 
 # -------------------- 延迟测速模块 -------------------- #
 
@@ -597,13 +604,12 @@ class LatencyTester:
         使用线程池和异步操作优化IP延迟和SSL证书验证
         """
         all_ips = list(file_ips)
-        start_time = datetime.now()
+        # start_time = datetime.now()
         rprint(
-            f"[bright_black]- 获取到 [bold bright_green]{
-                len(all_ips)}[/bold bright_green] 个唯一IP地址[/bright_black]"
+            f"[bright_black]- 获取到 [bold bright_green]{len(all_ips)}[/bold bright_green] 个唯一IP地址[/bright_black]"
         )
         if all_ips:
-            rprint(f"[bright_black]- 检测主机延迟...[/bright_black]")
+            rprint("[bright_black]- 检测主机延迟...[/bright_black]")
 
         # 使用线程池来并发处理SSL证书验证
         with concurrent.futures.ThreadPoolExecutor(
@@ -620,8 +626,7 @@ class LatencyTester:
             if valid_latency_results:
                 if len(valid_latency_results) < len(all_ips):
                     rprint(
-                        f"[bright_black]- 检测到 [bold bright_green]{
-                            len(valid_latency_results)}[/bold bright_green] 个有效IP地址[/bright_black]"
+                        f"[bright_black]- 检测到 [bold bright_green]{len(valid_latency_results)}[/bold bright_green] 个有效IP地址[/bright_black]"
                     )
                 valid_latency_ips = [
                     result
@@ -630,8 +635,7 @@ class LatencyTester:
                 ]
                 if not valid_latency_ips:
                     logging.warning(f"未发现延迟小于 {latency_limit}ms 的IP。")
-                    min_result = [
-                        min(valid_latency_results, key=lambda x: x[1])]
+                    min_result = [min(valid_latency_results, key=lambda x: x[1])]
                     latency_limit = min_result[0][1] * 2
                     logging.debug(f"主机IP最低延迟 {latency_limit:.0f}ms")
                     valid_latency_ips = [
@@ -639,11 +643,8 @@ class LatencyTester:
                         for result in valid_latency_results
                         if result[1] <= latency_limit
                     ]
-
             else:
                 rprint("[red]延迟检测没有获得有效IP[/red]")
-                # if "google" in group_name.lower():
-                # input("按任意键继续...")
                 return []
 
             # 排序结果
@@ -651,38 +652,18 @@ class LatencyTester:
 
             if len(valid_latency_ips) < len(valid_latency_results):
                 rprint(
-                    f"[bright_black]- 检测到 [bold bright_green]{
-                        len(valid_latency_ips)}[/bold bright_green] 个延迟小于 {latency_limit}ms 的有效IP地址[/bright_black]"
+                    f"[bright_black]- 检测到 [bold bright_green]{len(valid_latency_ips)}[/bold bright_green] 个延迟小于 {latency_limit}ms 的有效IP地址[/bright_black]"
                 )
 
-            ipv4_results = [
-                r for r in valid_latency_ips if not Utils.is_ipv6(r[0])]
-            ipv6_results = [
-                r for r in valid_latency_ips if Utils.is_ipv6(r[0])]
+            ipv4_results = [r for r in valid_latency_ips if not Utils.is_ipv6(r[0])]
+            ipv6_results = [r for r in valid_latency_ips if Utils.is_ipv6(r[0])]
 
             # 第二步：使用线程池并发验证SSL证书
-            # loop = asyncio.get_running_loop()
-            # ssl_verification_tasks = []
-
             # if "github" in group_name.lower():
             if len(valid_latency_ips) > 1 and any(
-                keyword in group_name.lower() for keyword in ["github", "google"]
+                keyword in group_name.lower() for keyword in ["google"]
             ):
-                rprint(f"[bright_black]- 验证SSL证书...[/bright_black]")
-                # batch_size = args.batch_size
-                # total_results = len(valid_latency_ips)
-
-                # for i in range(0, total_results, batch_size):
-                #     min_len = min(total_results, batch_size)
-                #     batch = valid_latency_ips[i:i + min_len]
-                #     valid_results = await self.process_hosts(domains, batch, executor, valid_latency_ips)
-                #     if valid_results:
-                #         break
-                # if not valid_results:
-                #     logging.warning(f"未发现延迟小于 {latency_limit}ms 且证书有效的IP。")
-                #     return []
-
-                # 方案0
+                rprint("[bright_black]- 验证SSL证书...[/bright_black]")
                 ipv4_count = 0
                 ipv6_count = 0
                 batch_size = args.batch_size
@@ -693,21 +674,18 @@ class LatencyTester:
 
                 for i in range(0, total_results, batch_size):
                     min_len = min(total_results, batch_size)
-                    batch = valid_latency_ips[i: i + min_len]
+                    batch = valid_latency_ips[i : i + min_len]
                     ssl_verification_tasks = [
                         loop.run_in_executor(
                             executor,
                             self._sync_is_cert_valid_dict,
                             domains[0],
-                            # self._sync_is_cert_valid_dict_average,
-                            # domains,
                             ip,
                             latency,
                         )
                         for ip, latency in batch
                     ]
 
-                    # 方案0-1
                     for future in asyncio.as_completed(ssl_verification_tasks):
                         ip, latency, ssl_valid = await future
                         if ssl_valid:
@@ -726,34 +704,6 @@ class LatencyTester:
                             else:
                                 if ipv4_count >= self.hosts_num:
                                     break
-
-                    # # 方案0-2 better
-                    # done, pending = await asyncio.wait(
-                    #     ssl_verification_tasks
-                    # )
-
-                    # for task in done:
-                    #     (ip, latency, ssl_valid) = await task
-                    #     if ssl_valid:
-                    #         valid_results.append((ip, latency))
-                    #         if Utils.is_ipv6(ip):
-                    #             ipv6_count += 1
-                    #         else:
-                    #             ipv4_count += 1
-                    #         if ipv6_results:
-                    #             if ipv4_results:
-                    #                 if ipv6_count >= 1 and ipv4_count >= 1:
-                    #                     break
-                    #             else:
-                    #                 if ipv6_count >= 1:
-                    #                     break
-                    #         else:
-                    #             if ipv4_count >= self.hosts_num:
-                    #                 break
-                    # # 显式取消剩余任务
-                    # for task in pending:
-                    #     task.cancel()
-
                     if ipv6_results:
                         if ipv4_results:
                             if ipv6_count >= 1 and ipv4_count >= 1:
@@ -764,136 +714,20 @@ class LatencyTester:
                     else:
                         if ipv4_count >= self.hosts_num:
                             break
-
-                # loop = asyncio.get_running_loop()
-                # ssl_verification_tasks = []
-
-                # for ip, latency in valid_latency_ips:
-                #     ssl_verification_tasks.append(
-                #         loop.run_in_executor(
-                #             executor,
-                #             self._sync_is_cert_valid_dict,
-                #             domains[0],
-                #             ip,
-                #             latency
-                #         )
-                #     )
-
-                # # 方案1
-                # # 等待SSL证书验证结果
-                # ssl_results = await asyncio.gather(*ssl_verification_tasks)
-                # valid_results = []
-                # for ip,latency,ssl_valid in ssl_results:
-                #     if ssl_valid:
-                #         print(ip,latency,ssl_valid)
-                #         valid_results.append((ip,latency))
-
-                # 结合延迟和SSL验证结果
-
-                # # 方案2
-                # valid_results = []
-                # ipv4_count = 0
-                # ipv6_count = 0
-                # ssl_verification_tasks = [
-                #     asyncio.ensure_future(task) for task in ssl_verification_tasks
-                # ]
-                # for future in asyncio.as_completed(ssl_verification_tasks):
-                #     ip, latency, ssl_valid = await future
-                #     if ssl_valid:
-                #         valid_results.append((ip, latency))
-                #         if Utils.is_ipv6(ip):
-                #             ipv6_count += 1
-                #         else:
-                #             ipv4_count += 1
-                #         if ipv6_results:
-                #             if ipv4_results:
-                #                 if ipv6_count >= 1 and ipv4_count >= 1:
-                #                     break
-                #             else:
-                #                 if ipv6_count >= 1:
-                #                     break
-                #         else:
-                #             if ipv4_count >= self.hosts_num:
-                #                 break
-                # # 取消所有未完成任务
-                # for task in ssl_verification_tasks:
-                #     if not task.done():
-                #         task.cancel()
-
-                # #    方案3
-                # valid_results = []
-                # ipv4_count = 0
-                # ipv6_count = 0
-                # done, pending = await asyncio.wait(
-                #     ssl_verification_tasks
-                # )
-
-                # for task in done:
-                #     (ip, latency, ssl_valid) = await task
-                #     if ssl_valid:
-                #         print(ip)
-                #         valid_results.append((ip, latency))
-                #         if Utils.is_ipv6(ip):
-                #             ipv6_count += 1
-                #         else:
-                #             ipv4_count += 1
-                #         if ipv6_results:
-                #             if ipv4_results:
-                #                 if ipv6_count >= 1 and ipv4_count >= 1:
-                #                     break
-                #             else:
-                #                 if ipv6_count >= 1:
-                #                     break
-                #         else:
-                #             if ipv4_count >= self.hosts_num:
-                #                 break
-                # # 显式取消剩余任务
-                # for task in pending:
-                #     task.cancel()
-
-                # break
-                # print(valid_results)
-                # input("暂停1")
             else:
                 valid_results = valid_latency_ips
-
-            # for ip, latency in valid_latency_ips:
-            #     ssl_verification_tasks.append(
-            #         loop.run_in_executor(
-            #             executor,
-            #             self._sync_is_cert_valid,
-            #             domains[0],
-            #             ip
-            #         )
-            #     )
-
-            # # 等待SSL证书验证结果
-            # ssl_results = await asyncio.gather(*ssl_verification_tasks)
-            # for (ip, latency), ssl_valid in zip(valid_latency_ips, ssl_results):
-            #     print((ip,latency),ssl_valid)
-            # # input("暂停1")
-            # # 结合延迟和SSL验证结果
-            # valid_results = [
-            #     (ip, latency) for (ip, latency), ssl_valid in zip(valid_latency_ips, ssl_results)
-            #     if ssl_valid
-            # ]
-
-            # print(valid_results)
-            # input("暂停")
 
         # 按延迟排序并选择最佳主机
         valid_results = sorted(valid_results, key=lambda x: x[1])
 
         if not valid_results:
             rprint(f"[red]未发现延迟小于 {latency_limit}ms 且证书有效的IP。[/red]")
-            # input("按任意键继续")
-            # exit("主动退出")
 
         # 选择最佳主机（支持IPv4和IPv6）
         best_hosts = self._select_best_hosts(valid_results)
 
         # 打印结果（可以根据需要保留或修改原有的打印逻辑）
-        self._print_results(best_hosts, latency_limit, start_time)
+        self._print_results(best_hosts, latency_limit)
 
         return best_hosts
 
@@ -906,8 +740,7 @@ class LatencyTester:
             )
             response_times = [t for t in response_times if t != float("inf")]
             if response_times:
-                average_response_time = sum(
-                    response_times) / len(response_times)
+                average_response_time = sum(response_times) / len(response_times)
             else:
                 average_response_time = float("inf")
 
@@ -944,75 +777,10 @@ class LatencyTester:
                 except Exception as e:
                     logging.debug(f"连接测试失败 {ip} (sockaddr: {sockaddr}): {e}")
                     continue
-
             return float("inf")
         except Exception as e:
             logging.error(f"获取地址信息失败 {ip}: {e}")
             return float("inf")
-
-    async def process_hosts(self, domains, batch, executor, valid_latency_ips):
-        loop = asyncio.get_running_loop()
-        ssl_verification_tasks = []
-        for ip, latency in batch:
-            ssl_verification_tasks.append(
-                loop.run_in_executor(
-                    executor, self._sync_is_cert_valid, domains[0], ip)
-            )
-        # 等待SSL证书验证结果
-        ssl_results = await asyncio.gather(*ssl_verification_tasks)
-
-        # 结合延迟和SSL验证结果
-        valid_results = [
-            (ip, latency)
-            for (ip, latency), ssl_valid in zip(valid_latency_ips, ssl_results)
-            if ssl_valid
-        ]
-        return valid_results
-
-    def _sync_is_cert_valid(self, domain: str, ip: str, port: int = 443) -> bool:
-        """
-        同步版本的证书验证方法，用于在线程池中执行
-        """
-        try:
-            # 复制原is_cert_valid方法的同步实现
-            context = ssl.create_default_context()
-            context.verify_mode = ssl.CERT_REQUIRED
-            context.check_hostname = True
-
-        try:
-            # 1. 尝试与IP地址建立SSL连接
-            with socket.create_connection((ip, port), timeout=1) as sock:
-                with context.wrap_socket(sock, server_hostname=domain) as ssock:
-                    cert = ssock.getpeercert()
-                    # 检查证书的有效期
-                    not_after = datetime.strptime(
-                        cert["notAfter"], "%b %d %H:%M:%S %Y %Z"
-                    )
-                    if not_after < datetime.now():
-                        logging.debug(f"{domain} ({ip}): 证书已过期")
-                        return False
-
-                    # 验证证书域名（由context自动完成），同时获取连接状态
-                    logging.debug(
-                        f"{domain} ({ip}): SSL证书有效，截止日期为 {not_after}"
-                    )
-                    return True
-
-        except ssl.SSLError as e:
-            logging.debug(f"{domain} ({ip}): SSL错误 - {e}")
-            return False
-        except socket.timeout as e:
-            logging.debug(f"{domain} ({ip}): 连接超时 - {e}")
-            raise
-            return False
-        except ConnectionError as e:
-            logging.debug(f"{domain} ({ip}): 连接被强迫关闭，ip有效 - {e}")
-            return True
-            return True
-        except Exception as e:
-            logging.error(f"{domain} ({ip}): 其他错误 - {e}")
-            raise
-            return False
 
     def _sync_is_cert_valid_dict(
         self, domain: str, ip: str, latency: float, port: int = 443
@@ -1032,22 +800,17 @@ class LatencyTester:
                         cert["notAfter"], "%b %d %H:%M:%S %Y %Z"
                     )
                     if not_after < datetime.now():
-                        logging.debug(
-                            f"{domain} ({ip}) {
-                                latency:.0f}ms: 证书已过期"
-                        )
+                        logging.debug(f"{domain} ({ip}) {latency:.0f}ms: 证书已过期")
                         return (ip, latency, False)
 
                     logging.debug(
-                        f"{domain} ({ip}) {
-                            latency:.0f}ms: SSL证书有效，截止日期为 {not_after}"
+                        f"{domain} ({ip}) {latency:.0f}ms: SSL证书有效，截止日期为 {not_after}"
                     )
                     return (ip, latency, True)
 
         except ConnectionError as e:
             logging.debug(
-                f"{domain} ({ip}) {
-                    latency:.0f}ms: 连接被强迫关闭，ip有效 - {e}"
+                f"{domain} ({ip}) {latency:.0f}ms: 连接被强迫关闭，ip有效 - {e}"
             )
             return (ip, latency, True)
         except Exception as e:
@@ -1075,21 +838,18 @@ class LatencyTester:
                         )
                         if not_after < datetime.now():
                             logging.debug(
-                                f"{domain} ({ip}) {
-                                    latency:.0f}ms: 证书已过期"
+                                f"{domain} ({ip}) {latency:.0f}ms: 证书已过期"
                             )
                             continue  # 检查下一个 domain
 
                         logging.debug(
-                            f"{domain} ({ip}) {
-                                latency:.0f}ms: SSL证书有效，截止日期为 {not_after}"
+                            f"{domain} ({ip}) {latency:.0f}ms: SSL证书有效，截止日期为 {not_after}"
                         )
                         return (ip, latency, True)  # 任意一个验证通过即返回成功
 
             except ConnectionError as e:
                 logging.debug(
-                    f"{domain} ({ip}) {
-                        latency:.0f}ms: 连接被强迫关闭，ip有效 - {e}"
+                    f"{domain} ({ip}) {latency:.0f}ms: 连接被强迫关闭，ip有效 - {e}"
                 )
                 return (ip, latency, True)
             except Exception as e:
@@ -1124,48 +884,40 @@ class LatencyTester:
                     ipv6_results and selected_count >= 1
                 ) or selected_count >= self.hosts_num:
                     break
-        # 检测 IPv6 证书有效性
+        # 再选择IPv6
         if ipv6_results:
             logging.debug(f"有效IPv6：\n{ipv6_results}\n")
             for ip, latency in ipv6_results:
-                best_hosts.append((ip, latency))
-                break
-                best_hosts.append((ip, latency))
-                break
+                if ipv4_results and latency <= min_ipv4_results[1] * 2:
+                    best_hosts.append((ip, latency))
+                    break
+                else:
+                    best_hosts.append((ip, latency))
+                    break
 
         return best_hosts
 
-    def _print_results(
-        self,
-        best_hosts: List[Tuple[str, float]],
-        latency_limit: int,
-        start_time: datetime,
-    ):
+    def _print_results(self, best_hosts: List[Tuple[str, float]], latency_limit: int):
         """
         打印结果的方法
         """
         rprint(
-            f"[bold yellow]最快的 DNS主机 IP（优先选择 IPv6） 丨   延迟 < {
-                latency_limit:.0f}ms ：[/bold yellow]"
+            f"[bold yellow]最快的 DNS主机 IP（优先选择 IPv6） 丨   延迟 < {latency_limit:.0f}ms ：[/bold yellow]"
         )
         for ip, time in best_hosts:
             rprint(
-                f"  [green]{
-                    ip}[/green]    [bright_black]{time:.2f} ms[/bright_black]"
+                f"  [green]{ip}[/green]    [bright_black]{time:.2f} ms[/bright_black]"
             )
-            rprint(
-                f"  [green]{
-                    ip}[/green]    [bright_black]{time:.2f} ms[/bright_black]"
-            )
-        end_time = datetime.now()
-        total_time = end_time - start_time
-        rprint(
-            f"[bold]运行时间:[/bold] [cyan]{total_time.total_seconds()                                        :.2f} 秒[/cyan]"
-        )
-        return best_hosts
+
+        # end_time = datetime.now()
+        # total_time = end_time - start_time
+        # rprint(
+        #     f"[bright_black]- 运行时间:[/bright_black] [cyan]{total_time.total_seconds():.2f} 秒[/cyan]")
 
 
 # -------------------- Hosts文件管理 -------------------- #
+
+
 
 
 class HostsManager:
@@ -1230,7 +982,7 @@ class HostsManager:
             .replace("+0800", "+08:00")
         )
 
-        rprint(f"\n[bold yellow]正在更新 hosts 文件...[/bold yellow]")
+        rprint("\n[bold yellow]正在更新 hosts 文件...[/bold yellow]")
 
         save_hosts_content = []  # 提取新内容文本
 
@@ -1287,8 +1039,7 @@ class HostsManager:
         with open("hosts", "w") as f:
             f.write("\n".join(save_hosts_content))
             rprint(
-                f"\n[blue]已生成 hosts 文件,位于: [underline]hosts[/underline][/blue] (共 {
-                    len(new_entries)} 个条目)"
+                f"\n[blue]已生成 hosts 文件,位于: [underline]hosts[/underline][/blue] (共 {len(new_entries)} 个条目)"
             )
 
         if not getattr(sys, "frozen", False):
@@ -1330,8 +1081,7 @@ class HostsUpdater:
                     all_ips = set()
                     if default_ips:
                         rprint(
-                            f"[bright_black]- 读取到 [bold bright_green]{
-                                len(default_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
+                            f"[bright_black]- 读取到 [bold bright_green]{len(default_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
                         )
                         all_ips.update(default_ips)
 
@@ -1353,28 +1103,25 @@ class HostsUpdater:
                         logging.warning(f"{domain} 未找到延迟满足要求的IP。")
                         continue
 
-                    new_entries = [f"{ip}\t{domain}" for ip,
-                                   latency in fastest_ips]
+                    new_entries = [f"{ip}\t{domain}" for ip, latency in fastest_ips]
                     all_entries.extend(new_entries)
             else:
                 all_ips = set()
                 if default_ips:
                     rprint(
-                        f"[bright_black]- 读取到 [bold bright_green]{
-                            len(default_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
+                        f"[bright_black]- 读取到 [bold bright_green]{len(default_ips)}[/bold bright_green] 个预设IP地址[/bright_black]"
                     )
                     all_ips.update(default_ips)
 
                 # 收集组内所有域名的DNS解析结果
-                domain_resolve_tasks = [self.resolver.resolve_domain(
-                    domain) for domain in group.domains]
-                resolved_ips = await asyncio.gather(*domain_resolve_tasks, return_exceptions=True)
+                domain_resolve_tasks = [
+                    self.resolver.resolve_domain(domain) for domain in group.domains
+                ]
+                resolved_ips = await asyncio.gather(
+                    *domain_resolve_tasks, return_exceptions=True
+                )
 
-                all_ips.update(
-                    ip for ip_list in resolved_ips for ip in ip_list if ip)
-
-                all_ips.update(
-                    ip for ip_list in resolved_ips for ip in ip_list if ip)
+                all_ips.update(ip for ip_list in resolved_ips for ip in ip_list if ip)
 
                 if not all_ips:
                     logging.warning(f"组 {group.name} 未找到任何可用IP。跳过该组。")
@@ -1390,8 +1137,6 @@ class HostsUpdater:
                     self.resolver.max_latency,
                 )
 
-                # input("继续")
-                # input("继续")
                 if not fastest_ips:
                     logging.warning(f"组 {group.name} 未找到延迟满足要求的IP。")
                     continue
@@ -1400,8 +1145,7 @@ class HostsUpdater:
                     f"\n[bold]为组 {group.name} 内所有域名应用延迟最低的 DNS 映射主机IP:[/bold]"
                 )
                 for domain in group.domains:
-                    new_entries = [f"{ip}\t{domain}" for ip,
-                                   latency in fastest_ips]
+                    new_entries = [f"{ip}\t{domain}" for ip, latency in fastest_ips]
                     rprint(f"[bright_black]  - {domain}[/bright_black]")
                     all_entries.extend(new_entries)
 
@@ -1449,26 +1193,22 @@ class Config:
             group_type=GroupType.SEPARATE,
             domains=[
                 "alive.github.com",
+                "live.github.com",
                 "api.github.com",
                 "codeload.github.com",
                 "central.github.com",
-                "collector.github.com",
-                "education.github.com",
                 "gist.github.com",
                 "github.com",
                 "github.community",
                 "github.global.ssl.fastly.net",
                 "github-com.s3.amazonaws.com",
                 "github-production-release-asset-2e65be.s3.amazonaws.com",
-                "live.github.com",
+                "github-production-user-asset-6210df.s3.amazonaws.com",
+                "github-production-repository-file-5c1aeb.s3.amazonaws.com",
                 "pipelines.actions.githubusercontent.com",
                 "github.githubassets.com",
                 "github-cloud.s3.amazonaws.com",
-                "github-production-release-asset-2e65be.s3.amazonaws.com",
-                "github-production-repository-file-5c1aeb.s3.amazonaws.com",
-                "github-production-user-asset-6210df.s3.amazonaws.com",
                 "github.blog",
-
             ],
             ips={},
         ),
@@ -1479,7 +1219,15 @@ class Config:
                 "githubstatus.com",
                 "assets-cdn.github.com",
                 "github.io",
-                "github.io",
+            ],
+            ips={},
+        ),
+        DomainGroup(
+            name="GitHub Central&Education ",
+            group_type=GroupType.SHARED,
+            domains=[
+                "collector.github.com",
+                "education.github.com",
             ],
             ips={},
         ),
@@ -1508,17 +1256,12 @@ class Config:
             ips={},
         ),
         DomainGroup(
-            name="TMDB API",
+            name="TMDB themoviedb",
+            group_type=GroupType.SHARED,
             domains=[
                 "tmdb.org",
                 "api.tmdb.org",
                 "files.tmdb.org",
-            ],
-            ips={},
-        ),
-        DomainGroup(
-            name="THE MOVIEDB",
-            domains=[
                 "themoviedb.org",
                 "api.themoviedb.org",
                 "www.themoviedb.org",
@@ -1621,6 +1364,7 @@ class Config:
         ),
         DomainGroup(
             name="TMDB 封面",
+            group_type=GroupType.SHARED,
             domains=["image.tmdb.org", "images.tmdb.org"],
             ips={
                 "89.187.162.242",
@@ -1660,7 +1404,7 @@ class Config:
         ),
         DomainGroup(
             name="IMDB 网页",
-            group_type=GroupType.SEPARATE,
+            group_type=GroupType.SHARED,
             domains=[
                 "imdb.com",
                 "www.imdb.com",
@@ -1675,7 +1419,7 @@ class Config:
         ),
         DomainGroup(
             name="IMDB CDN",
-            group_type=GroupType.SEPARATE,
+            group_type=GroupType.SHARED,
             domains=[
                 "m.media-amazon.com",
                 "Images-na.ssl-images-amazon.com",
@@ -1690,208 +1434,208 @@ class Config:
         ),
         DomainGroup(
             name="Google 翻译",
+            group_type=GroupType.SHARED,
             domains=[
                 "translate.google.com",
                 "translate.googleapis.com",
                 "translate-pa.googleapis.com",
             ],
-            # ips={
-            #     "108.177.127.214",
-            #     "108.177.97.141",
-            #     "142.250.101.157",
-            #     "142.250.110.102",
-            #     "142.250.141.100",
-            #     "142.250.145.113",
-            #     "142.250.145.139",
-            #     "142.250.157.133",
-            #     "142.250.157.149",
-            #     "142.250.176.6",
-            #     "142.250.181.232",
-            #     "142.250.183.106",
-            #     "142.250.187.139",
-            #     "142.250.189.6",
-            #     "142.250.196.174",
-            #     "142.250.199.161",
-            #     "142.250.199.75",
-            #     "142.250.204.37",
-            #     "142.250.204.38",
-            #     "142.250.204.49",
-            #     "142.250.27.113",
-            #     "142.250.4.136",
-            #     "142.250.66.10",
-            #     "142.250.76.35",
-            #     "142.251.1.102",
-            #     "142.251.1.136",
-            #     "142.251.163.91",
-            #     "142.251.165.101",
-            #     "142.251.165.104",
-            #     "142.251.165.106",
-            #     "142.251.165.107",
-            #     "142.251.165.110",
-            #     "142.251.165.112",
-            #     "142.251.165.122",
-            #     "142.251.165.133",
-            #     "142.251.165.139",
-            #     "142.251.165.146",
-            #     "142.251.165.152",
-            #     "142.251.165.155",
-            #     "142.251.165.164",
-            #     "142.251.165.165",
-            #     "142.251.165.193",
-            #     "142.251.165.195",
-            #     "142.251.165.197",
-            #     "142.251.165.201",
-            #     "142.251.165.82",
-            #     "142.251.165.94",
-            #     "142.251.178.105",
-            #     "142.251.178.110",
-            #     "142.251.178.114",
-            #     "142.251.178.117",
-            #     "142.251.178.122",
-            #     "142.251.178.137",
-            #     "142.251.178.146",
-            #     "142.251.178.164",
-            #     "142.251.178.166",
-            #     "142.251.178.181",
-            #     "142.251.178.190",
-            #     "142.251.178.195",
-            #     "142.251.178.197",
-            #     "142.251.178.199",
-            #     "142.251.178.200",
-            #     "142.251.178.214",
-            #     "142.251.178.83",
-            #     "142.251.178.84",
-            #     "142.251.178.88",
-            #     "142.251.178.92",
-            #     "142.251.178.99",
-            #     "142.251.2.139",
-            #     "142.251.221.121",
-            #     "142.251.221.129",
-            #     "142.251.221.138",
-            #     "142.251.221.98",
-            #     "142.251.40.104",
-            #     "142.251.41.14",
-            #     "142.251.41.36",
-            #     "142.251.42.197",
-            #     "142.251.8.155",
-            #     "142.251.8.189",
-            #     "172.217.16.210",
-            #     "172.217.164.103",
-            #     "172.217.168.203",
-            #     "172.217.168.215",
-            #     "172.217.168.227",
-            #     "172.217.169.138",
-            #     "172.217.17.104",
-            #     "172.217.171.228",
-            #     "172.217.175.23",
-            #     "172.217.19.72",
-            #     "172.217.192.149",
-            #     "172.217.192.92",
-            #     "172.217.197.156",
-            #     "172.217.197.91",
-            #     "172.217.204.104",
-            #     "172.217.204.156",
-            #     "172.217.214.112",
-            #     "172.217.218.133",
-            #     "172.217.222.92",
-            #     "172.217.31.136",
-            #     "172.217.31.142",
-            #     "172.217.31.163",
-            #     "172.217.31.168",
-            #     "172.217.31.174",
-            #     "172.253.117.118",
-            #     "172.253.122.154",
-            #     "172.253.62.88",
-            #     "173.194.199.94",
-            #     "173.194.216.102",
-            #     "173.194.220.101",
-            #     "173.194.220.138",
-            #     "173.194.221.101",
-            #     "173.194.222.106",
-            #     "173.194.222.138",
-            #     "173.194.66.137",
-            #     "173.194.67.101",
-            #     "173.194.68.97",
-            #     "173.194.73.106",
-            #     "173.194.73.189",
-            #     "173.194.76.107",
-            #     "173.194.77.81",
-            #     "173.194.79.200",
-            #     "209.85.201.155",
-            #     "209.85.201.198",
-            #     "209.85.201.201",
-            #     "209.85.203.198",
-            #     "209.85.232.101",
-            #     "209.85.232.110",
-            #     "209.85.232.133",
-            #     "209.85.232.195",
-            #     "209.85.233.100",
-            #     "209.85.233.102",
-            #     "209.85.233.105",
-            #     "209.85.233.136",
-            #     "209.85.233.191",
-            #     "209.85.233.93",
-            #     "216.239.32.40",
-            #     "216.58.200.10",
-            #     "216.58.213.8",
-            #     "34.105.140.105",
-            #     "34.128.8.104",
-            #     "34.128.8.40",
-            #     "34.128.8.55",
-            #     "34.128.8.64",
-            #     "34.128.8.70",
-            #     "34.128.8.71",
-            #     "34.128.8.85",
-            #     "34.128.8.97",
-            #     "35.196.72.166",
-            #     "35.228.152.85",
-            #     "35.228.168.221",
-            #     "35.228.195.190",
-            #     "35.228.40.236",
-            #     "64.233.162.102",
-            #     "64.233.163.97",
-            #     "64.233.165.132",
-            #     "64.233.165.97",
-            #     "64.233.169.100",
-            #     "64.233.188.155",
-            #     "64.233.189.133",
-            #     "64.233.189.148",
-            #     "66.102.1.167",
-            #     "66.102.1.88",
-            #     "74.125.133.155",
-            #     "74.125.135.17",
-            #     "74.125.139.97",
-            #     "74.125.142.116",
-            #     "74.125.193.152",
-            #     "74.125.196.195",
-            #     "74.125.201.91",
-            #     "74.125.204.101",
-            #     "74.125.204.113",
-            #     "74.125.204.114",
-            #     "74.125.204.132",
-            #     "74.125.204.141",
-            #     "74.125.204.147",
-            #     "74.125.206.117",
-            #     "74.125.206.137",
-            #     "74.125.206.144",
-            #     "74.125.206.146",
-            #     "74.125.206.154",
-            #     "74.125.21.191",
-            #     "74.125.71.145",
-            #     "74.125.71.152",
-            #     "74.125.71.199",
-            #     "2404:6800:4008:c13::5a",
-            #     "2404:6800:4008:c15::94",
-            #     "2607:f8b0:4004:c07::66",
-            #     "2607:f8b0:4004:c07::71",
-            #     "2607:f8b0:4004:c07::8a",
-            #     "2607:f8b0:4004:c07::8b",
-            #     "2a00:1450:4001:829::201a",
-            #     "185.199.109.133",
-            #     "185.199.110.133",
-            #     "185.199.111.133",
-            # },
-
+            ips={
+                "108.177.127.214",
+                "108.177.97.141",
+                "142.250.101.157",
+                "142.250.110.102",
+                "142.250.141.100",
+                "142.250.145.113",
+                "142.250.145.139",
+                "142.250.157.133",
+                "142.250.157.149",
+                "142.250.176.6",
+                "142.250.181.232",
+                "142.250.183.106",
+                "142.250.187.139",
+                "142.250.189.6",
+                "142.250.196.174",
+                "142.250.199.161",
+                "142.250.199.75",
+                "142.250.204.37",
+                "142.250.204.38",
+                "142.250.204.49",
+                "142.250.27.113",
+                "142.250.4.136",
+                "142.250.66.10",
+                "142.250.76.35",
+                "142.251.1.102",
+                "142.251.1.136",
+                "142.251.163.91",
+                "142.251.165.101",
+                "142.251.165.104",
+                "142.251.165.106",
+                "142.251.165.107",
+                "142.251.165.110",
+                "142.251.165.112",
+                "142.251.165.122",
+                "142.251.165.133",
+                "142.251.165.139",
+                "142.251.165.146",
+                "142.251.165.152",
+                "142.251.165.155",
+                "142.251.165.164",
+                "142.251.165.165",
+                "142.251.165.193",
+                "142.251.165.195",
+                "142.251.165.197",
+                "142.251.165.201",
+                "142.251.165.82",
+                "142.251.165.94",
+                "142.251.178.105",
+                "142.251.178.110",
+                "142.251.178.114",
+                "142.251.178.117",
+                "142.251.178.122",
+                "142.251.178.137",
+                "142.251.178.146",
+                "142.251.178.164",
+                "142.251.178.166",
+                "142.251.178.181",
+                "142.251.178.190",
+                "142.251.178.195",
+                "142.251.178.197",
+                "142.251.178.199",
+                "142.251.178.200",
+                "142.251.178.214",
+                "142.251.178.83",
+                "142.251.178.84",
+                "142.251.178.88",
+                "142.251.178.92",
+                "142.251.178.99",
+                "142.251.2.139",
+                "142.251.221.121",
+                "142.251.221.129",
+                "142.251.221.138",
+                "142.251.221.98",
+                "142.251.40.104",
+                "142.251.41.14",
+                "142.251.41.36",
+                "142.251.42.197",
+                "142.251.8.155",
+                "142.251.8.189",
+                "172.217.16.210",
+                "172.217.164.103",
+                "172.217.168.203",
+                "172.217.168.215",
+                "172.217.168.227",
+                "172.217.169.138",
+                "172.217.17.104",
+                "172.217.171.228",
+                "172.217.175.23",
+                "172.217.19.72",
+                "172.217.192.149",
+                "172.217.192.92",
+                "172.217.197.156",
+                "172.217.197.91",
+                "172.217.204.104",
+                "172.217.204.156",
+                "172.217.214.112",
+                "172.217.218.133",
+                "172.217.222.92",
+                "172.217.31.136",
+                "172.217.31.142",
+                "172.217.31.163",
+                "172.217.31.168",
+                "172.217.31.174",
+                "172.253.117.118",
+                "172.253.122.154",
+                "172.253.62.88",
+                "173.194.199.94",
+                "173.194.216.102",
+                "173.194.220.101",
+                "173.194.220.138",
+                "173.194.221.101",
+                "173.194.222.106",
+                "173.194.222.138",
+                "173.194.66.137",
+                "173.194.67.101",
+                "173.194.68.97",
+                "173.194.73.106",
+                "173.194.73.189",
+                "173.194.76.107",
+                "173.194.77.81",
+                "173.194.79.200",
+                "209.85.201.155",
+                "209.85.201.198",
+                "209.85.201.201",
+                "209.85.203.198",
+                "209.85.232.101",
+                "209.85.232.110",
+                "209.85.232.133",
+                "209.85.232.195",
+                "209.85.233.100",
+                "209.85.233.102",
+                "209.85.233.105",
+                "209.85.233.136",
+                "209.85.233.191",
+                "209.85.233.93",
+                "216.239.32.40",
+                "216.58.200.10",
+                "216.58.213.8",
+                "34.105.140.105",
+                "34.128.8.104",
+                "34.128.8.40",
+                "34.128.8.55",
+                "34.128.8.64",
+                "34.128.8.70",
+                "34.128.8.71",
+                "34.128.8.85",
+                "34.128.8.97",
+                "35.196.72.166",
+                "35.228.152.85",
+                "35.228.168.221",
+                "35.228.195.190",
+                "35.228.40.236",
+                "64.233.162.102",
+                "64.233.163.97",
+                "64.233.165.132",
+                "64.233.165.97",
+                "64.233.169.100",
+                "64.233.188.155",
+                "64.233.189.133",
+                "64.233.189.148",
+                "66.102.1.167",
+                "66.102.1.88",
+                "74.125.133.155",
+                "74.125.135.17",
+                "74.125.139.97",
+                "74.125.142.116",
+                "74.125.193.152",
+                "74.125.196.195",
+                "74.125.201.91",
+                "74.125.204.101",
+                "74.125.204.113",
+                "74.125.204.114",
+                "74.125.204.132",
+                "74.125.204.141",
+                "74.125.204.147",
+                "74.125.206.117",
+                "74.125.206.137",
+                "74.125.206.144",
+                "74.125.206.146",
+                "74.125.206.154",
+                "74.125.21.191",
+                "74.125.71.145",
+                "74.125.71.152",
+                "74.125.71.199",
+                "2404:6800:4008:c13::5a",
+                "2404:6800:4008:c15::94",
+                "2607:f8b0:4004:c07::66",
+                "2607:f8b0:4004:c07::71",
+                "2607:f8b0:4004:c07::8a",
+                "2607:f8b0:4004:c07::8b",
+                "2a00:1450:4001:829::201a",
+                "185.199.109.133",
+                "185.199.110.133",
+                "185.199.111.133",
+            },
         ),
         DomainGroup(
             name="JetBrain 插件",
@@ -1909,10 +1653,8 @@ class Config:
         "international": [
             # 国际 DNS 服务器
             # 第 1 梯队: 延迟较低
-            {"ip": "208.67.222.222", "provider": "OpenDNS",
-                "type": "ipv4"},  # Open DNS
-            {"ip": "2620:0:ccc::2", "provider": "OpenDNS",
-                "type": "ipv6"},  # Open DNS
+            {"ip": "208.67.222.222", "provider": "OpenDNS", "type": "ipv4"},  # Open DNS
+            {"ip": "2620:0:ccc::2", "provider": "OpenDNS", "type": "ipv6"},  # Open DNS
             {
                 "ip": "2001:4860:4860::8888",  # Google Public DNS
                 "provider": "Google",
@@ -1923,54 +1665,27 @@ class Config:
                 "provider": "Google",
                 "type": "ipv6",
             },
-            {
-                "ip": "210.184.24.65",
-                "provider": "CPC HK",  # 香港
-                "type": "ipv4"
-            },
-            {
-                "ip": "18.163.103.200",
-                "provider": "Amazon HK",  # 香港
-                "type": "ipv4"
-            },
+            {"ip": "210.184.24.65", "provider": "CPC HK", "type": "ipv4"},  # 香港
+            {"ip": "18.163.103.200", "provider": "Amazon HK", "type": "ipv4"},  # 香港
             {
                 "ip": "43.251.159.130",
                 "provider": "IPTELECOM HK",  # 香港
-                "type": "ipv4"
+                "type": "ipv4",
             },
             {
                 "ip": "14.198.168.140",
                 "provider": "Broadband HK",  # 香港
-                "type": "ipv4"
+                "type": "ipv4",
             },
             {
                 "ip": "66.203.146.122",
                 "provider": "Dimension HK",  # 香港
-                "type": "ipv4"
+                "type": "ipv4",
             },
-            {
-                "ip": "118.201.189.90",
-                "provider": "SingNet",  # 新加坡
-                            "type": "ipv4"
-            },
-            {
-                "ip": "1.228.180.5",
-                "provider": "SK Broadband ",  # 韩国
-                            "type": "ipv4"
-            },
-            {
-                "ip": "183.99.33.6",
-                "provider": "Korea Telecom ",  # 韩国
-                            "type": "ipv4"
-            },
-            {
-                "ip": "203.248.252.2",
-                "provider": "LG DACOM ",  # 韩国
-                            "type": "ipv4"
-            },
-
-
-
+            {"ip": "118.201.189.90", "provider": "SingNet", "type": "ipv4"},  # 新加坡
+            {"ip": "1.228.180.5", "provider": "SK Broadband ", "type": "ipv4"},  # 韩国
+            {"ip": "183.99.33.6", "provider": "Korea Telecom ", "type": "ipv4"},  # 韩国
+            {"ip": "203.248.252.2", "provider": "LG DACOM ", "type": "ipv4"},  # 韩国
             # 第 2 梯队：延迟适中
             # {
             #     "ip": "129.250.35.250",
@@ -2057,18 +1772,12 @@ class Config:
             # 国内 DNS 服务器
             # 第 1 梯队：正确解析Google翻译
             # 首选：延迟较低，相对稳定：
-            {
-                "ip": "114.114.114.114",  # 114 DNS
-                "provider": "114DNS",
-                "type": "ipv4"
-            },
+            {"ip": "114.114.114.114", "provider": "114DNS", "type": "ipv4"},  # 114 DNS
             {
                 "ip": "1.1.8.8",  # 上海牙木科技|联通机房
                 "provider": "上海牙木科技|联通机房",
-                "type": "ipv4"
+                "type": "ipv4",
             },
-
-
             # 备选：延迟一般：
             # {
             #     "ip": "180.76.76.76",  # 百度
@@ -2169,7 +1878,6 @@ async def main():
     )
 
     # 2.延迟检测
-    tester = LatencyTester(hosts_num=args.hosts_num, max_workers=200)
     tester = LatencyTester(hosts_num=args.hosts_num, max_workers=200)
 
     # 3.Hosts文件操作

@@ -12,7 +12,7 @@
 > 适合部分地区饱受dns污染困扰，访问 GitHub 卡顿、抽风、图裂，无法使用Chrome浏览器 自带翻译功能，无法刮削影视封面等问题。分别使用 `setDNS` 自动查找最快服务器并设置，使用 `setHosts` 自动查找DNS映射主机并设置。支持Windows、Linux、MacOS。Enjoy!❤
 
 > [!NOTE]
-> 首次运行大约需要2分钟以获取DNS主机，请耐心等待。后续运行速度大约10秒左右
+> 首次运行大约需要2分钟以获取DNS主机并建立缓存，请耐心等待。后续运行速度大概二三十秒。
 
 ## 一、使用方法
 
@@ -22,6 +22,10 @@
 
 [![Release Detail](https://img.shields.io/github/v/release/sinspired/cnNetTool?sort=date&display_name=release&logo=github&label=Release)](https://github.com/sinspired/cnNetTool/releases/latest)
 
+程序使用DNS服务器实时解析和DNS A、AAAA记录获取IPv4及IPv6地址，通过本地网络环境检测延迟并进行SSL证书验证。
+
+由于需要进行 `hosts` 修改备份操作，exe文件已标记需要管理员权限，如果被系统误报病毒，请允许后再次操作。
+
 > 强烈建议采用本方法，如果喜欢折腾，可以继续往下看。
 
 ### 1.2 手动操作
@@ -30,133 +34,122 @@
 
 ```bash
 
-# cnNetTool Start in 2024-12-05 11:37:05 +08:00
-140.82.113.26	alive.github.com
+# cnNetTool Start in 2024-12-09 14:52:26 +08:00
+140.82.114.26	alive.github.com
+140.82.113.26	live.github.com
 20.205.243.168	api.github.com
-140.82.113.22	central.github.com
 20.205.243.165	codeload.github.com
-140.82.113.22	collector.github.com
+140.82.114.22	central.github.com
 140.82.112.3	gist.github.com
 20.205.243.166	github.com
-140.82.113.18	github.community
+140.82.114.17	github.community
 151.101.129.194	github.global.ssl.fastly.net
-2a03:2880:f131:83:face:b00c:0:25de	github.global.ssl.fastly.net
-16.182.37.73	github-com.s3.amazonaws.com
-3.5.21.112		github-production-release-asset-2e65be.s3.amazonaws.com
-140.82.112.25	live.github.com
-# cnNetTool Start in 2024-11-29 20:52:50 +08:00
-140.82.112.26	alive.github.com
-140.82.113.21	central.github.com
-140.82.112.3	gist.github.com
-140.82.113.3	github.com
-140.82.114.18	github.community
-151.101.193.194	github.global.ssl.fastly.net
-52.217.197.113	github-com.s3.amazonaws.com
-3.5.25.118		github-production-release-asset-2e65be.s3.amazonaws.com
-140.82.114.25	live.github.com
+52.217.86.180	github-com.s3.amazonaws.com
+52.217.128.145	github-production-release-asset-2e65be.s3.amazonaws.com
+3.5.8.222		github-production-user-asset-6210df.s3.amazonaws.com
+52.217.192.129	github-production-repository-file-5c1aeb.s3.amazonaws.com
 13.107.42.16	pipelines.actions.githubusercontent.com
+2620:1ec:22::16	pipelines.actions.githubusercontent.com
 185.199.108.154	github.githubassets.com
-185.199.108.153	githubstatus.com
-2606:50c0:8001::153	githubstatus.com
-185.199.108.153	assets-cdn.github.com
-2606:50c0:8001::153	assets-cdn.github.com
-185.199.108.153	github.io
-2606:50c0:8001::153	github.io
-185.199.108.133	avatars.githubusercontent.com
+52.216.44.217	github-cloud.s3.amazonaws.com
+192.0.66.2		github.blog
+185.199.109.153	githubstatus.com
+2606:50c0:8003::153	githubstatus.com
+185.199.109.153	assets-cdn.github.com
+2606:50c0:8003::153	assets-cdn.github.com
+185.199.109.153	github.io
+2606:50c0:8003::153	github.io
+140.82.113.21	collector.github.com
+140.82.113.21	education.github.com
+185.199.111.133	avatars.githubusercontent.com
 2606:50c0:8002::154	avatars.githubusercontent.com
-185.199.108.133	avatars0.githubusercontent.com
+185.199.111.133	avatars0.githubusercontent.com
 2606:50c0:8002::154	avatars0.githubusercontent.com
-185.199.108.133	avatars1.githubusercontent.com
+185.199.111.133	avatars1.githubusercontent.com
 2606:50c0:8002::154	avatars1.githubusercontent.com
-185.199.108.133	avatars2.githubusercontent.com
+185.199.111.133	avatars2.githubusercontent.com
 2606:50c0:8002::154	avatars2.githubusercontent.com
-185.199.108.133	avatars3.githubusercontent.com
+185.199.111.133	avatars3.githubusercontent.com
 2606:50c0:8002::154	avatars3.githubusercontent.com
-185.199.108.133	avatars4.githubusercontent.com
+185.199.111.133	avatars4.githubusercontent.com
 2606:50c0:8002::154	avatars4.githubusercontent.com
-185.199.108.133	avatars5.githubusercontent.com
+185.199.111.133	avatars5.githubusercontent.com
 2606:50c0:8002::154	avatars5.githubusercontent.com
-185.199.108.133	camo.githubusercontent.com
+185.199.111.133	camo.githubusercontent.com
 2606:50c0:8002::154	camo.githubusercontent.com
-185.199.108.133	cloud.githubusercontent.com
+185.199.111.133	cloud.githubusercontent.com
 2606:50c0:8002::154	cloud.githubusercontent.com
-185.199.108.133	desktop.githubusercontent.com
+185.199.111.133	desktop.githubusercontent.com
 2606:50c0:8002::154	desktop.githubusercontent.com
-185.199.108.133	favicons.githubusercontent.com
+185.199.111.133	favicons.githubusercontent.com
 2606:50c0:8002::154	favicons.githubusercontent.com
-185.199.108.133	github.map.fastly.net
+185.199.111.133	github.map.fastly.net
 2606:50c0:8002::154	github.map.fastly.net
-185.199.108.133	media.githubusercontent.com
+185.199.111.133	media.githubusercontent.com
 2606:50c0:8002::154	media.githubusercontent.com
-185.199.108.133	objects.githubusercontent.com
+185.199.111.133	objects.githubusercontent.com
 2606:50c0:8002::154	objects.githubusercontent.com
-185.199.108.133	private-user-images.githubusercontent.com
+185.199.111.133	private-user-images.githubusercontent.com
 2606:50c0:8002::154	private-user-images.githubusercontent.com
-185.199.108.133	raw.githubusercontent.com
+185.199.111.133	raw.githubusercontent.com
 2606:50c0:8002::154	raw.githubusercontent.com
-185.199.108.133	user-images.githubusercontent.com
+185.199.111.133	user-images.githubusercontent.com
 2606:50c0:8002::154	user-images.githubusercontent.com
-54.230.71.49	tmdb.org
-2600:9000:2014:8a00:5:da10:7440:93a1	tmdb.org
-54.230.71.49	api.tmdb.org
-2600:9000:2014:8a00:5:da10:7440:93a1	api.tmdb.org
-54.230.71.49	files.tmdb.org
-2600:9000:2014:8a00:5:da10:7440:93a1	files.tmdb.org
-13.226.61.96	themoviedb.org
-2600:9000:2816:5000:e:5373:440:93a1	themoviedb.org
-13.226.61.96	api.themoviedb.org
-2600:9000:2816:5000:e:5373:440:93a1	api.themoviedb.org
-13.226.61.96	www.themoviedb.org
-2600:9000:2816:5000:e:5373:440:93a1	www.themoviedb.org
-13.226.61.96	auth.themoviedb.org
-2600:9000:2816:5000:e:5373:440:93a1	auth.themoviedb.org
-109.61.83.98	image.tmdb.org
-2400:52e0:1500::1092:1	image.tmdb.org
-109.61.83.98	images.tmdb.org
-2400:52e0:1500::1092:1	images.tmdb.org
-52.94.228.167	imdb.com
-13.35.217.192	www.imdb.com
-52.94.237.74	secure.imdb.com
-18.172.46.173	s.media-imdb.com
-52.94.225.248	us.dd.imdb.com
-13.35.217.192	www.imdb.to
-52.94.228.167	imdb-webservice.amazon.com
-44.215.137.99	origin-www.imdb.com
-23.49.104.166	m.media-amazon.com
-2600:9000:2078:f800:1d:d7f6:39d4:e6e1	m.media-amazon.com
-151.101.65.16	Images-na.ssl-images-amazon.com
-2600:1417:4400:12::1721:b8e7	Images-na.ssl-images-amazon.com
-23.49.104.166	images-fe.ssl-images-amazon.com
-2600:9000:2079:fa00:1d:d7f6:39d4:e6e1	images-fe.ssl-images-amazon.com
-151.101.129.16	images-eu.ssl-images-amazon.com
-2600:9000:2751:1a00:1d:d7f6:39d4:e6e1	images-eu.ssl-images-amazon.com
-23.49.104.166	ia.media-imdb.com
-2600:1417:4400:12::1721:b8e7	ia.media-imdb.com
-151.101.129.16	f.media-amazon.com
-2a04:4e42:48::272	f.media-amazon.com
-13.35.186.103	imdb-video.media-imdb.com
-13.32.32.190	dqpnq362acqdi.cloudfront.net
-2600:9000:27af:7600:5:ce70:a180:21	dqpnq362acqdi.cloudfront.net
+108.156.133.105	tmdb.org
+2600:9000:2816:fa00:e:5373:440:93a1	tmdb.org
+108.156.133.105	api.tmdb.org
+2600:9000:2816:fa00:e:5373:440:93a1	api.tmdb.org
+108.156.133.105	files.tmdb.org
+2600:9000:2816:fa00:e:5373:440:93a1	files.tmdb.org
+108.156.133.105	themoviedb.org
+2600:9000:2816:fa00:e:5373:440:93a1	themoviedb.org
+108.156.133.105	api.themoviedb.org
+2600:9000:2816:fa00:e:5373:440:93a1	api.themoviedb.org
+108.156.133.105	www.themoviedb.org
+2600:9000:2816:fa00:e:5373:440:93a1	www.themoviedb.org
+108.156.133.105	auth.themoviedb.org
+2600:9000:2816:fa00:e:5373:440:93a1	auth.themoviedb.org
+2400:52e0:1500::1093:1	image.tmdb.org
+2400:52e0:1500::1093:1	images.tmdb.org
+13.35.186.99	m.media-amazon.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	m.media-amazon.com
+13.35.186.99	Images-na.ssl-images-amazon.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	Images-na.ssl-images-amazon.com
+13.35.186.99	images-fe.ssl-images-amazon.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	images-fe.ssl-images-amazon.com
+13.35.186.99	images-eu.ssl-images-amazon.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	images-eu.ssl-images-amazon.com
+13.35.186.99	ia.media-imdb.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	ia.media-imdb.com
+13.35.186.99	f.media-amazon.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	f.media-amazon.com
+13.35.186.99	imdb-video.media-imdb.com
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	imdb-video.media-imdb.com
+13.35.186.99	dqpnq362acqdi.cloudfront.net
+2600:9000:21d1:3c00:1d:d7f6:39d4:e6e1	dqpnq362acqdi.cloudfront.net
 34.105.140.105	translate.google.com
-2404:6800:4005:823::200a	translate.google.com
+2404:6800:4005:824::200a	translate.google.com
 34.105.140.105	translate.googleapis.com
-2404:6800:4005:823::200a	translate.googleapis.com
+2404:6800:4005:824::200a	translate.googleapis.com
 34.105.140.105	translate-pa.googleapis.com
-2404:6800:4005:823::200a	translate-pa.googleapis.com
-13.33.183.20	plugins.jetbrains.com
-2600:9000:2014:f600:12:7c44:15c0:93a1	plugins.jetbrains.com
-13.33.183.20	download.jetbrains.com
-2600:9000:2014:f600:12:7c44:15c0:93a1	download.jetbrains.com
-13.33.183.20	cache-redirector.jetbrains.com
-2600:9000:2014:f600:12:7c44:15c0:93a1	cache-redirector.jetbrains.com
+2404:6800:4005:824::200a	translate-pa.googleapis.com
+18.65.168.67	plugins.jetbrains.com
+2600:9000:2014:a800:12:7c44:15c0:93a1	plugins.jetbrains.com
+18.65.168.67	download.jetbrains.com
+2600:9000:2014:a800:12:7c44:15c0:93a1	download.jetbrains.com
+18.65.168.67	cache-redirector.jetbrains.com
+2600:9000:2014:a800:12:7c44:15c0:93a1	cache-redirector.jetbrains.com
 
-# Update time: 2024-12-05 11:37:05 +08:00
+# Update time: 2024-12-09 14:52:26 +08:00
 # GitHub仓库: https://github.com/sinspired/cnNetTool
 # cnNetTool End
 
 ```
 
-以上内容会自动定时更新， 数据更新时间：2024-12-05 11:37:05 +08:00
+以上内容会自动定时更新， 数据更新时间：2024-12-09 14:52:26 +08:00
+
+> [!NOTE]
+> 由于数据获取于非本地网络环境，请自行测试可用性，否则请采用方法 1，使用本地网络环境自动设置。
 
 #### 1.2.2 修改 hosts 文件
 
@@ -174,7 +167,7 @@ hosts 文件在每个系统的位置不一，详情如下：
 3. iPhone、iPad 须越狱、Android 必须要 root。
 
 > [!NOTE]
-> 请先把 `hosts` 文件复制到其他目录，修改后再复制回去，否则可能无法修改。
+> Windows系统可能需要先把 `hosts` 文件复制到其他目录，修改后再复制回去，否则可能没有修改权限。
 
 ## 二、安装
 
@@ -194,10 +187,11 @@ pip install -r requirements.txt
 ### DNS 服务器工具 `SetDNS.py`
 
 * --debug 启用调试日志
-* --show-availbale-list, --list 显示可用dns列表，通过 --num 控制显示数量
-* --best-dns-num BEST_DNS_NUM, --num 显示最佳DNS服务器的数量
+* --show-availbale-list, --list, -l 显示可用dns列表，通过 --num 控制显示数量
+* --best-dns-num BEST_DNS_NUM, --num, -n 显示最佳DNS服务器的数量
 * --algorithm --mode {region,overall} 默认 `region` 平衡IPv4和ipv6 DNS，选择 `overall` 则会在所有IP中选择最快IP
-* --show-resolutions, --show 显示域名解析结果
+* --show-resolutions, --resolutions, -r 显示域名解析结果
+* --only-global, --global 仅使用国际DNS服务器
 
 ### Hosts文件工具 `SetHosts.py`
 
@@ -222,7 +216,7 @@ py SetHosts.py
 ```
 可执行文件也可带参数运行
 ```pwsh
-./SetDNS.exe --best-dns-num 10
+./SetDNS.exe --best-dns-num 10 --mode 'overall' --show-resolutions
 ./SetHosts.exe --num-fastest 3 --max-latency 500 
 ```
 
