@@ -918,8 +918,6 @@ class LatencyTester:
 # -------------------- Hosts文件管理 -------------------- #
 
 
-
-
 class HostsManager:
     def __init__(self):
         # 自动根据操作系统获取hosts文件路径
@@ -1815,11 +1813,7 @@ class Config:
             #     "provider": "Tencent",
             #     "type": "ipv6"
             # },
-            {
-                "ip": "114.114.114.114",  # 114 DNS
-                "provider": "114DNS",
-                "type": "ipv4"
-            },
+            {"ip": "114.114.114.114", "provider": "114DNS", "type": "ipv4"},  # 114 DNS
             # {
             #     "ip": "101.226.4.6",  # 未360dns
             #     "provider": "360dns",
