@@ -34,27 +34,27 @@
 
 ```bash
 
-# cnNetTool Start in 2024-12-30 20:40:36 +08:00
-140.82.114.25	alive.github.com
+# cnNetTool Start in 2024-12-31 00:25:47 +08:00
+140.82.112.25	alive.github.com
 140.82.114.26	live.github.com
-140.82.112.5	api.github.com
-140.82.114.10	codeload.github.com
-140.82.112.22	central.github.com
-140.82.113.4	gist.github.com
-140.82.112.4	github.com
-140.82.114.18	github.community
+140.82.114.5	api.github.com
+140.82.112.10	codeload.github.com
+140.82.114.21	central.github.com
+140.82.114.4	gist.github.com
+140.82.114.3	github.com
+140.82.113.17	github.community
 151.101.1.194	github.global.ssl.fastly.net
-54.231.139.217	github-com.s3.amazonaws.com
-52.217.131.161	github-production-release-asset-2e65be.s3.amazonaws.com
-52.217.172.241	github-production-user-asset-6210df.s3.amazonaws.com
-16.15.217.215	github-production-repository-file-5c1aeb.s3.amazonaws.com
+52.217.142.57	github-com.s3.amazonaws.com
+52.217.142.57	github-production-release-asset-2e65be.s3.amazonaws.com
+16.182.36.185	github-production-user-asset-6210df.s3.amazonaws.com
+52.216.51.49	github-production-repository-file-5c1aeb.s3.amazonaws.com
 13.107.42.16	pipelines.actions.githubusercontent.com
-185.199.110.154	github.githubassets.com
-16.15.185.182	github-cloud.s3.amazonaws.com
+185.199.111.154	github.githubassets.com
+3.5.30.213		github-cloud.s3.amazonaws.com
 192.0.66.2		github.blog
-185.199.109.153	githubstatus.com
-185.199.109.153	assets-cdn.github.com
-185.199.109.153	github.io
+185.199.108.153	githubstatus.com
+185.199.108.153	assets-cdn.github.com
+185.199.108.153	github.io
 140.82.114.22	collector.github.com
 140.82.114.22	education.github.com
 185.199.111.133	avatars.githubusercontent.com
@@ -74,45 +74,45 @@
 185.199.111.133	private-user-images.githubusercontent.com
 185.199.111.133	raw.githubusercontent.com
 185.199.111.133	user-images.githubusercontent.com
-18.160.200.56	tmdb.org
-18.160.200.56	api.tmdb.org
-18.160.200.56	files.tmdb.org
-18.160.200.56	themoviedb.org
-18.160.200.56	api.themoviedb.org
-18.160.200.56	www.themoviedb.org
-18.160.200.56	auth.themoviedb.org
-185.93.1.249	image.tmdb.org
-185.93.1.249	images.tmdb.org
-3.168.35.144	imdb.com
-3.168.35.144	www.imdb.com
-3.168.35.144	secure.imdb.com
-3.168.35.144	s.media-imdb.com
-3.168.35.144	us.dd.imdb.com
-3.168.35.144	www.imdb.to
-3.168.35.144	imdb-webservice.amazon.com
-3.168.35.144	origin-www.imdb.com
-108.159.227.57	m.media-amazon.com
-108.159.227.57	Images-na.ssl-images-amazon.com
-108.159.227.57	images-fe.ssl-images-amazon.com
-108.159.227.57	images-eu.ssl-images-amazon.com
-108.159.227.57	ia.media-imdb.com
-108.159.227.57	f.media-amazon.com
-108.159.227.57	imdb-video.media-imdb.com
-108.159.227.57	dqpnq362acqdi.cloudfront.net
-142.250.191.106	translate.google.com
-142.250.191.106	translate.googleapis.com
-142.250.191.106	translate-pa.googleapis.com
-3.162.174.24	plugins.jetbrains.com
-3.162.174.24	download.jetbrains.com
-3.162.174.24	cache-redirector.jetbrains.com
+108.139.29.78	tmdb.org
+108.139.29.78	api.tmdb.org
+108.139.29.78	files.tmdb.org
+108.139.29.78	themoviedb.org
+108.139.29.78	api.themoviedb.org
+108.139.29.78	www.themoviedb.org
+108.139.29.78	auth.themoviedb.org
+185.93.1.250	image.tmdb.org
+185.93.1.250	images.tmdb.org
+52.94.225.248	imdb.com
+52.94.225.248	www.imdb.com
+52.94.225.248	secure.imdb.com
+52.94.225.248	s.media-imdb.com
+52.94.225.248	us.dd.imdb.com
+52.94.225.248	www.imdb.to
+52.94.225.248	imdb-webservice.amazon.com
+52.94.225.248	origin-www.imdb.com
+199.232.37.16	m.media-amazon.com
+199.232.37.16	Images-na.ssl-images-amazon.com
+199.232.37.16	images-fe.ssl-images-amazon.com
+199.232.37.16	images-eu.ssl-images-amazon.com
+199.232.37.16	ia.media-imdb.com
+199.232.37.16	f.media-amazon.com
+199.232.37.16	imdb-video.media-imdb.com
+199.232.37.16	dqpnq362acqdi.cloudfront.net
+142.251.178.181	translate.google.com
+142.251.178.181	translate.googleapis.com
+142.251.178.181	translate-pa.googleapis.com
+13.32.151.102	plugins.jetbrains.com
+13.32.151.102	download.jetbrains.com
+13.32.151.102	cache-redirector.jetbrains.com
 
-# Update time: 2024-12-30 20:40:36 +08:00
+# Update time: 2024-12-31 00:25:47 +08:00
 # GitHub仓库: https://github.com/sinspired/cnNetTool
 # cnNetTool End
 
 ```
 
-以上内容会自动定时更新， 数据更新时间：2024-12-30 20:40:36 +08:00
+以上内容会自动定时更新， 数据更新时间：2024-12-31 00:25:47 +08:00
 
 > [!NOTE]
 > 由于数据获取于非本地网络环境，请自行测试可用性，否则请采用方法 1，使用本地网络环境自动设置。
