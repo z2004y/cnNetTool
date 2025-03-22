@@ -79,7 +79,7 @@ jobs:
         zip -j "cnNetTool-macOS-x64.zip" dist/*-macOS-x64
 
     - name: Upload artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ${{ matrix.platform }}-executables
         path: cnNetTool-${{ matrix.platform }}-x64.zip
