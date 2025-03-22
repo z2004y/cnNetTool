@@ -16,8 +16,6 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 import dns.resolver
 from prettytable import PrettyTable
 
-from setHosts import parse_args
-
 # 设置日志记录
 logger = logging.getLogger(__name__)
 
