@@ -15,6 +15,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 
 import dns.resolver
 from prettytable import PrettyTable
+from setHosts import parse_args
 
 # 设置日志记录
 logger = logging.getLogger(__name__)
@@ -296,7 +297,7 @@ def set_dns_servers(ipv4_dns_list: list[str], ipv6_dns_list: list[str]):
             if "Connected" in line or "已连接" in line:
                 interface = line.split()[-1]
                 # 更严格地检查并忽略WSL相关的虚拟网卡
-                if "WSL" in interface or "Hyper-V" in interface:
+                if "WSL" in interface or "Hyper-V" in interface or "VM" in interface:
                     logger.info(f"跳过虚拟网卡: {interface}")
                     continue
                 if ipv4_dns_list:
@@ -333,7 +334,7 @@ def set_dns_servers(ipv4_dns_list: list[str], ipv6_dns_list: list[str]):
                                 check=True,
                             )
                     except subprocess.CalledProcessError as e:
-                        logger.error(f"设置IPv4 DNS for {interface}失败: {e}")
+                        logger.debug(f"设置IPv4 DNS for {interface}失败: {e}")
                 if ipv6_dns_list:
                     logger.debug(
                         f"设置IPv6 DNS for {interface}: {
@@ -368,7 +369,7 @@ def set_dns_servers(ipv4_dns_list: list[str], ipv6_dns_list: list[str]):
                                 check=True,
                             )
                     except subprocess.CalledProcessError as e:
-                        logger.error(f"设置IPv6 DNS for {interface}失败: {e}")
+                        logger.debug(f"设置IPv6 DNS for {interface}失败: {e}")
 
     elif system == "Linux":
         with open("/etc/resolv.conf", "w") as f:
