@@ -34,83 +34,85 @@
 
 ```bash
 
-# cnNetTool Start in 2025-03-23 13:51:50 +08:00
-140.82.113.26	alive.github.com
-20.205.243.168	api.github.com
-140.82.114.21	central.github.com
-20.205.243.165	codeload.github.com
-140.82.112.21	collector.github.com
-20.205.243.166	github.com
-140.82.114.17	github.community
-16.15.216.213	github-com.s3.amazonaws.com
-16.182.38.185	github-production-release-asset-2e65be.s3.amazonaws.com
-140.82.112.25	live.github.com
+# cnNetTool Start in 2025-03-23 13:56:58 +08:00
+140.82.112.26	alive.github.com
+140.82.113.25	live.github.com
+140.82.114.6	api.github.com
+140.82.113.9	codeload.github.com
+140.82.114.22	central.github.com
+140.82.112.4	gist.github.com
+140.82.114.3	github.com
+140.82.113.18	github.community
+151.101.193.194	github.global.ssl.fastly.net
+16.15.185.153	github-com.s3.amazonaws.com
+52.216.42.137	github-production-release-asset-2e65be.s3.amazonaws.com
+3.5.29.177		github-production-user-asset-6210df.s3.amazonaws.com
+3.5.21.193		github-production-repository-file-5c1aeb.s3.amazonaws.com
 13.107.42.16	pipelines.actions.githubusercontent.com
 185.199.109.154	github.githubassets.com
-185.199.110.153	github.io
-185.199.110.153	githubstatus.com
-185.199.110.153	assets-cdn.github.com
-2606:50c0:8000::154	avatars.githubusercontent.com
-2606:50c0:8000::154	avatars0.githubusercontent.com
-2606:50c0:8000::154	avatars1.githubusercontent.com
-2606:50c0:8000::154	avatars2.githubusercontent.com
-2606:50c0:8000::154	avatars3.githubusercontent.com
-2606:50c0:8000::154	avatars4.githubusercontent.com
-2606:50c0:8000::154	avatars5.githubusercontent.com
-2606:50c0:8000::154	camo.githubusercontent.com
-2606:50c0:8000::154	cloud.githubusercontent.com
-2606:50c0:8000::154	desktop.githubusercontent.com
-2606:50c0:8000::154	favicons.githubusercontent.com
-2606:50c0:8000::154	github.map.fastly.net
-2606:50c0:8000::154	media.githubusercontent.com
-2606:50c0:8000::154	objects.githubusercontent.com
-2606:50c0:8000::154	private-user-images.githubusercontent.com
-2606:50c0:8000::154	raw.githubusercontent.com
-2606:50c0:8000::154	user-images.githubusercontent.com
-2600:9000:2200:5c00:5:da10:7440:93a1	tmdb.org
-2600:9000:2200:5c00:5:da10:7440:93a1	api.tmdb.org
-2600:9000:2200:5c00:5:da10:7440:93a1	files.tmdb.org
-2600:9000:282b:e000:e:5373:440:93a1	themoviedb.org
-2600:9000:282b:e000:e:5373:440:93a1	api.themoviedb.org
-2600:9000:282b:e000:e:5373:440:93a1	www.themoviedb.org
-2600:9000:282b:e000:e:5373:440:93a1	auth.themoviedb.org
-2400:52e0:1a01::996:1	image.tmdb.org
-2400:52e0:1a01::996:1	images.tmdb.org
-52.94.225.248	imdb.com
-13.35.217.192	www.imdb.com
-52.94.225.248	secure.imdb.com
-13.35.217.192	s.media-imdb.com
-52.94.228.167	us.dd.imdb.com
-13.35.217.192	www.imdb.to
-52.94.225.248	imdb-webservice.amazon.com
-98.82.155.134	origin-www.imdb.com
-146.75.45.16	m.media-amazon.com
-2600:9000:282b:de00:1d:d7f6:39d4:e6e1	m.media-amazon.com
-3.169.9.22		Images-na.ssl-images-amazon.com
-2600:9000:2816:5800:1d:d7f6:39d4:e6e1	Images-na.ssl-images-amazon.com
-146.75.45.16	images-eu.ssl-images-amazon.com
-2600:9000:21d1:b800:1d:d7f6:39d4:e6e1	images-eu.ssl-images-amazon.com
-13.35.222.208	ia.media-imdb.com
-2a04:4e42:7b::272	ia.media-imdb.com
-146.75.45.16	f.media-amazon.com
-2a04:4e42:7b::272	f.media-amazon.com
-13.35.186.11	imdb-video.media-imdb.com
-13.32.32.190	dqpnq362acqdi.cloudfront.net
-2600:9000:2014:1c00:5:ce70:a180:21	dqpnq362acqdi.cloudfront.net
-54.192.18.92	plugins.jetbrains.com
-2600:9000:2200:ee00:12:7c44:15c0:93a1	plugins.jetbrains.com
-54.192.18.92	download.jetbrains.com
-2600:9000:2200:ee00:12:7c44:15c0:93a1	download.jetbrains.com
-54.192.18.92	cache-redirector.jetbrains.com
-2600:9000:2200:ee00:12:7c44:15c0:93a1	cache-redirector.jetbrains.com
+52.216.112.115	github-cloud.s3.amazonaws.com
+192.0.66.2		github.blog
+185.199.111.153	githubstatus.com
+185.199.111.153	assets-cdn.github.com
+185.199.111.153	github.io
+140.82.114.22	collector.github.com
+140.82.114.22	education.github.com
+185.199.110.133	avatars.githubusercontent.com
+185.199.110.133	avatars0.githubusercontent.com
+185.199.110.133	avatars1.githubusercontent.com
+185.199.110.133	avatars2.githubusercontent.com
+185.199.110.133	avatars3.githubusercontent.com
+185.199.110.133	avatars4.githubusercontent.com
+185.199.110.133	avatars5.githubusercontent.com
+185.199.110.133	camo.githubusercontent.com
+185.199.110.133	cloud.githubusercontent.com
+185.199.110.133	desktop.githubusercontent.com
+185.199.110.133	favicons.githubusercontent.com
+185.199.110.133	github.map.fastly.net
+185.199.110.133	media.githubusercontent.com
+185.199.110.133	objects.githubusercontent.com
+185.199.110.133	private-user-images.githubusercontent.com
+185.199.110.133	raw.githubusercontent.com
+185.199.110.133	user-images.githubusercontent.com
+108.159.227.111	tmdb.org
+108.159.227.111	api.tmdb.org
+108.159.227.111	files.tmdb.org
+108.159.227.111	themoviedb.org
+108.159.227.111	api.themoviedb.org
+108.159.227.111	www.themoviedb.org
+108.159.227.111	auth.themoviedb.org
+185.93.1.250	image.tmdb.org
+185.93.1.250	images.tmdb.org
+3.168.35.144	imdb.com
+3.168.35.144	www.imdb.com
+3.168.35.144	secure.imdb.com
+3.168.35.144	s.media-imdb.com
+3.168.35.144	us.dd.imdb.com
+3.168.35.144	www.imdb.to
+3.168.35.144	imdb-webservice.amazon.com
+3.168.35.144	origin-www.imdb.com
+108.156.172.22	m.media-amazon.com
+108.156.172.22	Images-na.ssl-images-amazon.com
+108.156.172.22	images-fe.ssl-images-amazon.com
+108.156.172.22	images-eu.ssl-images-amazon.com
+108.156.172.22	ia.media-imdb.com
+108.156.172.22	f.media-amazon.com
+108.156.172.22	imdb-video.media-imdb.com
+108.156.172.22	dqpnq362acqdi.cloudfront.net
+142.250.191.170	translate.google.com
+142.250.191.170	translate.googleapis.com
+142.250.191.170	translate-pa.googleapis.com
+18.160.213.53	plugins.jetbrains.com
+18.160.213.53	download.jetbrains.com
+18.160.213.53	cache-redirector.jetbrains.com
 
-# Update time: 2025-03-23 13:51:50 +08:00
+# Update time: 2025-03-23 13:56:58 +08:00
 # GitHub仓库: https://github.com/sinspired/cnNetTool
 # cnNetTool End
 
 ```
 
-以上内容会自动定时更新， 数据更新时间：2025-03-23 13:51:50 +08:00
+以上内容会自动定时更新， 数据更新时间：2025-03-23 13:56:58 +08:00
 
 > [!NOTE]
 > 由于数据获取于非本地网络环境，请自行测试可用性，否则请采用方法 1，使用本地网络环境自动设置。
