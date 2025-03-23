@@ -290,22 +290,22 @@ class DomainResolver:
             dns_ips = await self._resolve_via_dns(domain)
             ips.update(dns_ips)
 
-        # 2. 然后通过DNS_records解析
-        # 由于init时已经处理了过期文件，这里只需要检查域名是否在缓存中
-        if domain in self.dns_records:
-            domain_hosts = self.dns_records.get(domain, {})
-            ipv4_ips = domain_hosts.get("ipv4", [])
-            ipv6_ips = domain_hosts.get("ipv6", [])
+        # # 2. 然后通过DNS_records解析
+        # # 由于init时已经处理了过期文件，这里只需要检查域名是否在缓存中
+        # if domain in self.dns_records:
+        #     domain_hosts = self.dns_records.get(domain, {})
+        #     ipv4_ips = domain_hosts.get("ipv4", [])
+        #     ipv6_ips = domain_hosts.get("ipv6", [])
 
-            ips.update(ipv4_ips + ipv6_ips)
-        else:
-            ipaddress_ips = await self._resolve_via_ipaddress(domain)
-            ips.update(ipaddress_ips)
+        #     ips.update(ipv4_ips + ipv6_ips)
+        # else:
+        #     ipaddress_ips = await self._resolve_via_ipaddress(domain)
+        #     ips.update(ipaddress_ips)
 
-        if ips:
-            logging.debug(f"成功解析 {domain}, 发现 {len(ips)} 个 DNS 主机")
-        else:
-            logging.debug(f"警告: 无法解析 {domain}")
+        # if ips:
+        #     logging.debug(f"成功解析 {domain}, 发现 {len(ips)} 个 DNS 主机")
+        # else:
+        #     logging.debug(f"警告: 无法解析 {domain}")
 
         return ips
 

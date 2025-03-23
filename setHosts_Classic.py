@@ -343,28 +343,28 @@ class DomainResolver:
         dns_resolve_duration = dns_resolve_end_time - start_time
         logging.debug(f"DNS解析耗时: {dns_resolve_duration.total_seconds():.2f}秒")
 
-        # 2. 然后通过DNS_records解析
-        # 由于init时已经处理了过期文件，这里只需要检查域名是否在缓存中
-        if domain in self.dns_records:
-            domain_hosts = self.dns_records.get(domain, {})
-            ipv4_ips = domain_hosts.get("ipv4", [])
-            ipv6_ips = domain_hosts.get("ipv6", [])
+        # # 2. 然后通过DNS_records解析
+        # # 由于init时已经处理了过期文件，这里只需要检查域名是否在缓存中
+        # if domain in self.dns_records:
+        #     domain_hosts = self.dns_records.get(domain, {})
+        #     ipv4_ips = domain_hosts.get("ipv4", [])
+        #     ipv6_ips = domain_hosts.get("ipv6", [])
 
-            ips.update(ipv4_ips + ipv6_ips)
-            logging.debug(
-                f"成功通过缓存文件解析 {domain}, 发现 {len(ipv4_ips) + len(ipv6_ips)} 个 DNS 主机:\n{ipv4_ips}\n{ipv6_ips if ipv6_ips else ''}\n"
-            )
-        else:
-            ipaddress_ips = await self._resolve_via_ipaddress(domain)
-            if ipaddress_ips:
-                ips.update(ipaddress_ips)
+        #     ips.update(ipv4_ips + ipv6_ips)
+        #     logging.debug(
+        #         f"成功通过缓存文件解析 {domain}, 发现 {len(ipv4_ips) + len(ipv6_ips)} 个 DNS 主机:\n{ipv4_ips}\n{ipv6_ips if ipv6_ips else ''}\n"
+        #     )
+        # else:
+        #     ipaddress_ips = await self._resolve_via_ipaddress(domain)
+        #     if ipaddress_ips:
+        #         ips.update(ipaddress_ips)
 
-        if ips:
-            logging.debug(
-                f"成功通过 DNS服务器 和 DNS记录 解析 {domain}, 发现 {len(ips)} 个 唯一 DNS 主机\n{ips}\n"
-            )
-        else:
-            logging.debug(f"警告: 无法解析 {domain}")
+        # if ips:
+        #     logging.debug(
+        #         f"成功通过 DNS服务器 和 DNS记录 解析 {domain}, 发现 {len(ips)} 个 唯一 DNS 主机\n{ips}\n"
+        #     )
+        # else:
+        #     logging.debug(f"警告: 无法解析 {domain}")
 
         ipaddress_resolve_end_time = datetime.now()
         ipaddress_resolve_duration = ipaddress_resolve_end_time - dns_resolve_end_time
@@ -521,15 +521,15 @@ class DomainResolver:
     async def _resolve_via_ipaddress(self, domain: str) -> Set[str]:
         ips = set()
         url = f"https://www.ipaddress.com/website/{domain}"
-        # headers = {
-        #    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
-        #    "AppleWebKit/537.36 (KHTML, like Gecko) "
-        #    "Chrome/106.0.0.0 Safari/537.36"
-        # }
         headers = {
-            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36",
-            "Referer": "https://www.ipaddress.com",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
+            "AppleWebKit/537.36 (KHTML, like Gecko) "
+            "Chrome/106.0.0.0 Safari/537.36"
         }
+        # headers = {
+        #     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/112.0.5615.121 Safari/537.36",
+        #     "Referer": "https://www.ipaddress.com",
+        # }
 
         try:
             async with httpx.AsyncClient(
